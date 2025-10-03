@@ -28,13 +28,15 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
       "router": {},
+      "apiBaseUrl": "https://cargo360-api.onrender.com/",
       "eas": {
         "projectId": "29a388fe-2fe3-4872-b459-3c0e53e2a56f"
       }

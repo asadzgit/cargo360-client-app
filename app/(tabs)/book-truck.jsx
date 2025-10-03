@@ -48,7 +48,7 @@ export default function BookTruckScreen() {
     setLoading(true);
 
     try {
-      const booking = addBooking({
+      const booking = await addBooking({
         vehicleType,
         loadType,
         fromLocation,
@@ -58,7 +58,7 @@ export default function BookTruckScreen() {
 
       Alert.alert(
         'Booking Confirmed!', 
-        `Your booking request (#${booking.id}) has been submitted successfully. You will be notified when a driver accepts your request.`,
+        `Your booking request (#${booking?.id || booking?._id || 'N/A'}) has been submitted successfully. You will be notified when a driver accepts your request.`,
         [
           {
             text: 'OK',
@@ -76,7 +76,7 @@ export default function BookTruckScreen() {
         ]
       );
     } catch (error) {
-      Alert.alert('Error', 'Failed to submit booking. Please try again.');
+      Alert.alert('Error', error?.message || 'Failed to submit booking. Please try again.');
     } finally {
       setLoading(false);
     }

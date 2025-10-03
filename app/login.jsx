@@ -12,6 +12,7 @@ export default function LoginScreen() {
   const { login } = useBooking();
 
   const handleLogin = async () => {
+    debugger;
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
@@ -20,12 +21,10 @@ export default function LoginScreen() {
     setLoading(true);
     
     try {
-      const success = login(email, password);
-      if (success) {
-        router.replace('/(tabs)');
-      }
+      await login(email, password);
+      router.replace('/(tabs)');
     } catch (error) {
-      Alert.alert('Error', 'Login failed. Please try again.');
+      Alert.alert('Error', error?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }

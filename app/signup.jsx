@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Truck, Mail, Lock, User } from 'lucide-react-native';
+import { Truck, Mail, Lock, User, Phone } from 'lucide-react-native';
 import { useBooking } from '../context/BookingContext';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { signup } = useBooking();
 
   const handleSignup = async () => {
-    if (!name || !email || !password) {
+    if (!name || !email || !phone || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -26,12 +27,14 @@ export default function SignupScreen() {
     setLoading(true);
     
     try {
-      const success = signup(email, password);
-      if (success) {
+      const response = await signup({ name, email, phone, password });
+      if (response?.error) {
+        Alert.alert('Error', response.error);
+      } else {
         router.replace('/(tabs)');
       }
     } catch (error) {
-      Alert.alert('Error', 'Signup failed. Please try again.');
+      Alert.alert('Error', error?.message || 'Signup failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -66,6 +69,18 @@ export default function SignupScreen() {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            placeholderTextColor="#94A3B8"
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Phone size={20} color="#64748B" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Phone number"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
             placeholderTextColor="#94A3B8"
           />
         </View>

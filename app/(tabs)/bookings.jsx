@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -17,24 +16,39 @@ import {
   Package 
 } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
+import { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function BookingStatusScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
-  const { bookings, updateBookingStatus } = useBooking();
+  const { bookings, fetchBookings } = useBooking();
+
+  // Fetch on initial mount
+  useEffect(() => {
+    (async () => {
+      try { await fetchBookings(); } catch (_) {}
+    })();
+  }, []);
+
+  // Re-fetch when the screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      (async () => {
+        try { if (active) await fetchBookings(); } catch (_) {}
+      })();
+      return () => { active = false; };
+    }, [fetchBookings])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // Simulate API call to refresh bookings
-    setTimeout(() => {
-      // Randomly update some booking statuses for demo
-      bookings.forEach((booking, index) => {
-        if (Math.random() > 0.7 && booking.status === 'Pending') {
-          updateBookingStatus(booking.id, 'Accepted');
-        }
-      });
+    try {
+      await fetchBookings();
+    } finally {
       setRefreshing(false);
-    }, 1000);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -48,7 +62,7 @@ export default function BookingStatusScreen() {
   const handleBookingPress = (booking) => {
     router.push({
       pathname: '/booking-detail',
-      params: { bookingId: booking.id }
+      params: { bookingId: booking.id || booking._id }
     });
   };
 
@@ -85,13 +99,13 @@ export default function BookingStatusScreen() {
           <View style={styles.bookingsContainer}>
             {bookings.map((booking) => (
               <TouchableOpacity 
-                key={booking.id}
+                key={booking.id || booking._id}
                 style={styles.bookingCard}
                 onPress={() => handleBookingPress(booking)}
               >
                 <View style={styles.bookingHeader}>
                   <View style={styles.bookingInfo}>
-                    <Text style={styles.bookingId}>#{booking.id}</Text>
+                    <Text style={styles.bookingId}>#{booking.id || booking._id}</Text>
                     <View style={[
                       styles.statusBadge,
                       booking.status === 'Accepted' ? styles.statusAccepted : 
@@ -119,18 +133,18 @@ export default function BookingStatusScreen() {
                   
                   <View style={styles.detailRow}>
                     <Package size={16} color="#64748B" />
-                    <Text style={styles.detailText}>{booking.loadType}</Text>
+                    <Text style={styles.detailText}>{booking.cargoType}</Text>
                   </View>
 
                   <View style={styles.routeContainer}>
                     <View style={styles.routeRow}>
                       <MapPin size={16} color="#059669" />
-                      <Text style={styles.routeText}>{booking.fromLocation}</Text>
+                      <Text style={styles.routeText}>{booking.pickupLocation || booking.fromLocation}</Text>
                     </View>
                     <View style={styles.routeConnector} />
                     <View style={styles.routeRow}>
                       <MapPin size={16} color="#DC2626" />
-                      <Text style={styles.routeText}>{booking.toLocation}</Text>
+                      <Text style={styles.routeText}>{booking.dropLocation || booking.toLocation}</Text>
                     </View>
                   </View>
 

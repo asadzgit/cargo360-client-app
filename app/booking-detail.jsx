@@ -11,15 +11,56 @@ import {
   Phone 
 } from 'lucide-react-native';
 import { useBooking } from '../context/BookingContext';
+import { useEffect, useState } from 'react';
 
 export default function BookingDetailScreen() {
   const router = useRouter();
   const { bookingId } = useLocalSearchParams();
-  const { bookings } = useBooking();
+  const { bookings, getBookingById } = useBooking();
+  const bookingFromContext = bookings.find(b => (b.id || b._id)?.toString() === bookingId);
+  const [booking, setBooking] = useState(() => {
+    if (!bookingFromContext) return null;
+    return {
+      id: bookingFromContext.id || bookingFromContext._id,
+      vehicleType: bookingFromContext.vehicleType,
+      loadType: bookingFromContext.cargoType || bookingFromContext.loadType,
+      fromLocation: bookingFromContext.pickupLocation || bookingFromContext.fromLocation,
+      toLocation: bookingFromContext.dropLocation || bookingFromContext.toLocation,
+      createdAt: bookingFromContext.createdAt,
+      status: bookingFromContext.status || 'Pending',
+      description: bookingFromContext.description,
+    };
+  });
+  const [error, setError] = useState(null);
 
-  const booking = bookings.find(b => b.id.toString() === bookingId);
+  useEffect(() => {
+    let mounted = true;
+    if (!bookingFromContext) {
+      (async () => {
+        try {
+          const data = await getBookingById(bookingId);
+          if (!mounted) return;
+          const normalized = {
+            id: data?.id || data?._id,
+            vehicleType: data?.vehicleType,
+            loadType: data?.cargoType || data?.loadType,
+            fromLocation: data?.pickupLocation || data?.fromLocation,
+            toLocation: data?.dropLocation || data?.toLocation,
+            createdAt: data?.createdAt,
+            status: data?.status || 'Pending',
+            description: data?.description,
+          };
+          setBooking(normalized);
+        } catch (e) {
+          if (!mounted) return;
+          setError(e?.message || 'Failed to load booking');
+        }
+      })();
+    }
+    return () => { mounted = false; };
+  }, [bookingId]);
 
-  if (!booking) {
+  if (error || !booking) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -29,11 +70,11 @@ export default function BookingDetailScreen() {
           <Text style={styles.title}>Booking Not Found</Text>
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>This booking could not be found.</Text>
+          <Text style={styles.errorText}>{error || 'This booking could not be found.'}</Text>
         </View>
       </View>
     );
-  }
+  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
