@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useRef } from 'react';
 import { authAPI, bookingAPI, setTokens, clearTokens } from '../services/api';
 
 const BookingContext = createContext();
@@ -7,6 +7,9 @@ export function BookingProvider({ children }) {
   const [user, setUser] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
+  const lastFetchedAtRef = useRef(0);
+  const inFlightRef = useRef(null);
+  const CACHE_TTL_MS = 15000; // 15s cache window to reduce churn on focus
 
   useEffect(() => {
     (async () => {
@@ -14,7 +17,7 @@ export function BookingProvider({ children }) {
         setLoading(true);
         const { data } = await authAPI.me();
         setUser(data);
-        await fetchBookings();
+        await fetchBookings(undefined, { force: true });
       } catch (_e) {
         // no-op: not logged in or token invalid
       } finally {
@@ -36,7 +39,7 @@ export function BookingProvider({ children }) {
         const me = await authAPI.me();
         setUser(me.data);
       }
-      await fetchBookings();
+      await fetchBookings(undefined, { force: true });
       return true;
     } catch (e) {
       throw e;
@@ -71,16 +74,41 @@ export function BookingProvider({ children }) {
     await clearTokens();
     setUser(null);
     setBookings([]);
+    lastFetchedAtRef.current = 0;
   }
 
-  async function fetchBookings(status) {
-    try {
-      const { data } = await bookingAPI.mine(status);
-      setBookings(Array.isArray(data) ? data : data?.items || []);
-    } catch (e) {
-      // surface to caller if needed
-      throw e;
+  async function fetchBookings(status, options = {}) {
+    const { force = false } = options;
+    const now = Date.now();
+    if (!force && bookings.length && now - lastFetchedAtRef.current < CACHE_TTL_MS) {
+      return bookings;
     }
+    if (inFlightRef.current) return inFlightRef.current;
+
+    const run = (async () => {
+      try {
+        const resp = await bookingAPI.mine(status);
+        const raw = resp?.data; // may be { success, data: {...} } or array
+        const container = raw?.data ?? raw; // unwrap one level if present
+        let list = [];
+        if (Array.isArray(container)) list = container;
+        else if (Array.isArray(container?.items)) list = container.items;
+        else if (Array.isArray(container?.shipments)) list = container.shipments;
+        else if (Array.isArray(container?.results)) list = container.results;
+        else list = [];
+
+        setBookings(list);
+        lastFetchedAtRef.current = Date.now();
+        return list;
+      } catch (e) {
+        throw e;
+      } finally {
+        inFlightRef.current = null;
+      }
+    })();
+
+    inFlightRef.current = run;
+    return run;
   }
 
   async function addBooking({ vehicleType, loadType, fromLocation, toLocation, description, cargoWeight, cargoSize, budget }) {
@@ -95,15 +123,17 @@ export function BookingProvider({ children }) {
       ...(budget ? { budget } : {}),
     };
     const { data } = await bookingAPI.create(payload);
-    await fetchBookings();
+    await fetchBookings(undefined, { force: true });
     return data;
   }
 
   async function getBookingById(id) {
-    const local = bookings.find((b) => `${b.id}` === `${id}`);
+    const local = bookings.find((b) => `${b.id || b._id}` === `${id}`);
     if (local) return local;
-    const { data } = await bookingAPI.get(id);
-    return data;
+    const resp = await bookingAPI.get(id);
+    const raw = resp?.data;
+    const value = raw?.data ?? raw; // unwrap if wrapped
+    return value;
   }
 
   const value = useMemo(() => ({
