@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { 
   ArrowLeft, 
@@ -16,8 +16,21 @@ import { useEffect, useState } from 'react';
 export default function BookingDetailScreen() {
   const router = useRouter();
   const { bookingId } = useLocalSearchParams();
-  const { bookings, getBookingById } = useBooking();
-  const bookingFromContext = bookings.find(b => (b.id || b._id)?.toString() === bookingId);
+  const { bookings, getBookingById, updateBooking, cancelBooking } = useBooking();  const bookingFromContext = bookings.find(b => (b.id || b._id)?.toString() === bookingId);
+  const [editError, setEditError] = useState(null);
+  const [updating, setUpdating] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [editVisible, setEditVisible] = useState(false);
+  const [form, setForm] = useState({
+    pickupLocation: '',
+    dropLocation: '',
+    cargoType: '',
+    vehicleType: '',
+    description: '',
+    cargoWeight: '',
+    cargoSize: '',
+    budget: '',
+  });
   const [booking, setBooking] = useState(() => {
     if (!bookingFromContext) return null;
     return {
@@ -60,6 +73,21 @@ export default function BookingDetailScreen() {
     return () => { mounted = false; };
   }, [bookingId]);
 
+  useEffect(() => {
+    if (booking) {
+      setForm({
+        pickupLocation: booking.fromLocation || '',
+        dropLocation: booking.toLocation || '',
+        cargoType: booking.loadType || '',
+        vehicleType: booking.vehicleType || '',
+        description: booking.description || '',
+        cargoWeight: booking.cargoWeight ? String(booking.cargoWeight) : '',
+        cargoSize: booking.cargoSize || '',
+        budget: booking.budget ? String(booking.budget) : '',
+      });
+    }
+  }, [booking]);
+
   if (error || !booking) {
     return (
       <View style={styles.container}>
@@ -86,6 +114,56 @@ export default function BookingDetailScreen() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleCancelBooking = () => {
+    const statusKey = (booking?.status || '').toLowerCase();
+    if (['delivered', 'completed', 'cancelled'].includes(statusKey)) {
+      Alert.alert('Not allowed', 'This booking cannot be cancelled.');
+      return;
+    }
+    Alert.alert('Cancel booking?', 'Are you sure you want to cancel this booking?', [
+      { text: 'No' },
+      {
+        text: 'Yes, cancel',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setCancelling(true);
+            await cancelBooking(booking.id);
+            Alert.alert('Cancelled', 'Your booking has been cancelled.');
+          } catch (e) {
+            Alert.alert('Error', e?.message || 'Failed to cancel booking.');
+          } finally {
+            setCancelling(false);
+          }
+        },
+      },
+    ]);
+  };
+  
+  const handleSaveEdit = async () => {
+    try {
+      setUpdating(true);
+      // Prepare partials only for filled fields
+      const payload = {};
+      if (form.pickupLocation) payload.pickupLocation = form.pickupLocation;
+      if (form.dropLocation) payload.dropLocation = form.dropLocation;
+      if (form.cargoType) payload.cargoType = form.cargoType;
+      if (form.vehicleType) payload.vehicleType = form.vehicleType;
+      if (form.description) payload.description = form.description;
+      if (form.cargoWeight !== '') payload.cargoWeight = form.cargoWeight;
+      if (form.cargoSize) payload.cargoSize = form.cargoSize;
+      if (form.budget !== '') payload.budget = form.budget;
+  
+      await updateBooking(booking.id, payload);
+      setEditVisible(false);
+      Alert.alert('Updated', 'Your booking has been updated.');
+    } catch (e) {
+      Alert.alert('Error', e?.message || 'Failed to update booking.');
+    } finally {
+      setUpdating(false);
+    }
   };
 
   return (
@@ -203,14 +281,63 @@ export default function BookingDetailScreen() {
         )}
 
         {booking.status === 'Pending' && (
-          <View style={styles.pendingInfo}>
-            <Text style={styles.pendingTitle}>Looking for a driver...</Text>
-            <Text style={styles.pendingText}>
-              We're searching for available drivers in your area. You'll be notified once a driver accepts your request.
-            </Text>
-          </View>
+          <>
+            <View style={styles.pendingInfo}>
+              <Text style={styles.pendingTitle}>Looking for a driver...</Text>
+              <Text style={styles.pendingText}>
+                We're searching for available drivers in your area. You'll be notified once a driver accepts your request.
+              </Text>
+            </View>
+            <View style={{ marginTop: 12, gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => setEditVisible(true)}
+                disabled={updating}
+                style={{ backgroundColor: '#2563EB', opacity: updating ? 0.6 : 1, borderRadius: 8, paddingVertical: 12, alignItems: 'center' }}
+              >
+                <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>
+                  {updating ? 'Updating...' : 'Edit Booking'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleCancelBooking}
+                disabled={cancelling}
+                style={{ backgroundColor: '#DC2626', opacity: cancelling ? 0.6 : 1, borderRadius: 8, paddingVertical: 12, alignItems: 'center' }}
+              >
+                <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>
+                  {cancelling ? 'Cancelling...' : 'Cancel Booking'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
         )}
       </View>
+      {/* Edit Modal */}
+      <Modal visible={editVisible} transparent animationType="slide" onRequestClose={() => setEditVisible(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Edit Booking</Text>
+
+            <TextInput style={styles.modalInput} placeholder="Pickup Location" value={form.pickupLocation} onChangeText={(t) => setForm((s) => ({ ...s, pickupLocation: t }))} />
+            <TextInput style={styles.modalInput} placeholder="Drop Location" value={form.dropLocation} onChangeText={(t) => setForm((s) => ({ ...s, dropLocation: t }))} />
+            <TextInput style={styles.modalInput} placeholder="Cargo Type" value={form.cargoType} onChangeText={(t) => setForm((s) => ({ ...s, cargoType: t }))} />
+            <TextInput style={styles.modalInput} placeholder="Vehicle Type" value={form.vehicleType} onChangeText={(t) => setForm((s) => ({ ...s, vehicleType: t }))} />
+            <TextInput style={[styles.modalInput, { height: 80 }]} placeholder="Description" multiline value={form.description} onChangeText={(t) => setForm((s) => ({ ...s, description: t }))} />
+            <TextInput style={styles.modalInput} placeholder="Cargo Weight" keyboardType="numeric" value={form.cargoWeight} onChangeText={(t) => setForm((s) => ({ ...s, cargoWeight: t }))} />
+            <TextInput style={styles.modalInput} placeholder="Cargo Size" value={form.cargoSize} onChangeText={(t) => setForm((s) => ({ ...s, cargoSize: t }))} />
+            <TextInput style={styles.modalInput} placeholder="Budget" keyboardType="numeric" value={form.budget} onChangeText={(t) => setForm((s) => ({ ...s, budget: t }))} />
+
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+              <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#64748B' }]} onPress={() => setEditVisible(false)}>
+                <Text style={styles.modalButtonText}>Close</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#2563EB' }]} onPress={handleSaveEdit} disabled={updating}>
+                <Text style={styles.modalButtonText}>{updating ? 'Saving...' : 'Save'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -441,5 +568,46 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#64748B',
     textAlign: 'center',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    width: '100%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginBottom: 12,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 10,
+    color: '#1E293B',
+    backgroundColor: '#FFFFFF',
+  },
+  modalButton: {
+    flex: 1,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });
