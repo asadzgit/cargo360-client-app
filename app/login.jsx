@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Truck, Mail, Lock } from 'lucide-react-native';
 import { useBooking } from '../context/BookingContext';
@@ -33,9 +33,13 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Truck size={48} color="#2563EB" />
+      <Image 
+          source={require('../assets/images/icon.png')} 
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>Sign in to your TruckBook account</Text>
+        <Text style={styles.subtitle}>Sign in to your Cargo360 account</Text>
       </View>
 
       <View style={styles.form}>
@@ -91,6 +95,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
     padding: 24,
     justifyContent: 'center',
+  },
+  logo: {
+    width: 128,
+    height: 128,
   },
   header: {
     alignItems: 'center',

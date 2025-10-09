@@ -16,8 +16,8 @@ export default function IndexScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>TruckBook</Text>
-      <Text style={styles.subtitle}>Professional Truck Booking</Text>
+      <Text style={styles.title}>Cargo360</Text>
+      <Text style={styles.subtitle}>Professional logistics solutions for your business</Text>
     </View>
   );
 }

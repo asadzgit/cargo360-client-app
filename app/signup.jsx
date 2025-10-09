@@ -45,7 +45,7 @@ export default function SignupScreen() {
       <View style={styles.header}>
         <Truck size={48} color="#2563EB" />
         <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Join TruckBook and start booking</Text>
+        <Text style={styles.subtitle}>Join Cargo360 and start booking</Text>
       </View>
 
       <View style={styles.form}>
