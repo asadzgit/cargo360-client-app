@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, TextInput, Linking, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { 
   ArrowLeft, 
@@ -11,6 +11,8 @@ import {
   Phone 
 } from 'lucide-react-native';
 import { useBooking } from '../context/BookingContext';
+import { bookingAPI } from '../services/api';
+import Constants from 'expo-constants';
 import { useEffect, useState } from 'react';
 
 export default function BookingDetailScreen() {
@@ -31,6 +33,14 @@ export default function BookingDetailScreen() {
     cargoSize: '',
     budget: '',
   });
+  
+// Driver location modal state
+const [locVisible, setLocVisible] = useState(false);
+const [locLoading, setLocLoading] = useState(false);
+const [locError, setLocError] = useState('');
+const [locData, setLocData] = useState(null); // { latitude, longitude, timestamp, speed, heading, accuracy, driver }
+const [locAddress, setLocAddress] = useState('');
+
   const [booking, setBooking] = useState(() => {
     if (!bookingFromContext) return null;
     return {
@@ -165,6 +175,71 @@ export default function BookingDetailScreen() {
       setUpdating(false);
     }
   };
+
+  // Build Google Maps directions URL pickup -> current (optional) -> drop
+const buildGoogleMapsDirUrl = (pickup, current, drop) => {
+  const p = encodeURIComponent(pickup || '');
+  const d = encodeURIComponent(drop || '');
+  if (current?.lat && current?.lng) {
+    return `https://www.google.com/maps/dir/${p}/${current.lat},${current.lng}/${d}`;
+  }
+  return `https://www.google.com/maps/dir/${p}/${d}`;
+};
+
+const reverseGeocode = async (lat, lng) => {
+  try {
+    const key = Constants?.expoConfig?.extra?.geoapifyKey || Constants?.manifest?.extra?.geoapifyKey;
+    if (!key) return null;
+    const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${lat.toFixed(6)}&lon=${lng.toFixed(6)}&apiKey=${encodeURIComponent(key)}`;
+    const r = await fetch(url);
+    const j = await r.json();
+    return j?.features?.[0]?.properties?.formatted || null;
+  } catch {
+    return null;
+  }
+};
+
+// Replace your existing fetchDriverLocation with this
+const fetchDriverLocation = async () => {
+  setLocLoading(true);
+  setLocError('');
+  setLocData(null);
+  setLocAddress('');
+  try {
+    const resp = await bookingAPI.currentLocation(booking.id);
+    // Axios response body or raw fetch fallback
+    const body = resp?.data ?? resp;
+    // Unwrap { success, data: {...} } if present
+    const container = body?.data ?? body;
+    // Prefer container.currentLocation, else container (for safety)
+    const current = container?.currentLocation ?? container;
+
+    const lat = current?.latitude;
+    const lng = current?.longitude;
+
+    if (typeof lat === 'number' && typeof lng === 'number') {
+      const addr = await reverseGeocode(lat, lng);
+      setLocAddress(addr || `${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+      setLocData(current);
+    } else {
+      const msg = container?.message || body?.message || 'The driver has not shared their location yet.';
+      setLocError(msg);
+    }
+  } catch (e) {
+    setLocError(e?.message || 'Failed to fetch driver location');
+  } finally {
+    setLocLoading(false);
+  }
+};
+
+const openMaps = () => {
+  const url = buildGoogleMapsDirUrl(
+    booking.fromLocation,
+    locData?.latitude && locData?.longitude ? { lat: locData.latitude, lng: locData.longitude } : null,
+    booking.toLocation
+  );
+  Linking.openURL(url).catch(() => Alert.alert('Error', 'Unable to open Google Maps.'));
+};
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -311,6 +386,16 @@ export default function BookingDetailScreen() {
             </View>
           </>
         )}
+        {['picked_up', 'in_transit'].includes(booking.status.toLowerCase()) && (
+        <View style={{ marginTop: 12 }}>
+          <TouchableOpacity
+            onPress={() => { setLocVisible(true); fetchDriverLocation(); }}
+            style={{ backgroundColor: '#0EA5E9', borderRadius: 8, paddingVertical: 12, alignItems: 'center' }}
+          >
+            <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>See Driver Location</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       </View>
       {/* Edit Modal */}
       <Modal visible={editVisible} transparent animationType="slide" onRequestClose={() => setEditVisible(false)}>
@@ -335,6 +420,66 @@ export default function BookingDetailScreen() {
                 <Text style={styles.modalButtonText}>{updating ? 'Saving...' : 'Save'}</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+      {/* Driver Location Modal */}
+      <Modal visible={locVisible} transparent animationType="slide" onRequestClose={() => setLocVisible(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Driver Location</Text>
+
+            {locLoading ? (
+              <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+                <ActivityIndicator color="#2563EB" />
+                <Text style={{ color: '#64748B', marginTop: 8 }}>Fetching current location…</Text>
+              </View>
+            ) : (
+              <>
+                {locError ? (
+                  <Text style={{ color: '#DC2626', marginBottom: 8 }}>{locError}</Text>
+                ) : (
+                  <>
+                    <Text style={{ color: '#1E293B', fontWeight: '600', marginBottom: 6 }}>
+                      Booking #{booking.id}
+                    </Text>
+                    {locAddress ? (
+                      <Text style={{ color: '#1E293B', marginBottom: 6 }}>Address: {locAddress}</Text>
+                    ) : null}
+                    {locData?.driver?.name || locData?.driver?.phone ? (
+                      <Text style={{ color: '#64748B', marginBottom: 6 }}>
+                        Driver: {locData?.driver?.name || 'N/A'}{locData?.driver?.phone ? ` · ${locData.driver.phone}` : ''}
+                      </Text>
+                    ) : null}
+                    <Text style={{ color: '#64748B', marginBottom: 6 }}>
+                      Last updated: {locData?.timestamp ? new Date(locData.timestamp).toLocaleString() : 'N/A'}
+                    </Text>
+                    {typeof locData?.speed === 'number' ? (
+                      <Text style={{ color: '#64748B' }}>Speed: {locData.speed} km/h</Text>
+                    ) : null}
+                    {typeof locData?.heading === 'number' ? (
+                      <Text style={{ color: '#64748B' }}>Heading: {locData.heading}°</Text>
+                    ) : null}
+                    {typeof locData?.accuracy === 'number' ? (
+                      <Text style={{ color: '#64748B' }}>Accuracy: {locData.accuracy} m</Text>
+                    ) : null}
+                  </>
+                )}
+
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+                  <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#0EA5E9' }]} onPress={fetchDriverLocation}>
+                    <Text style={styles.modalButtonText}>Refresh Location</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#059669' }]} onPress={openMaps}>
+                    <Text style={styles.modalButtonText}>See on Maps</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#64748B', marginTop: 12 }]} onPress={() => setLocVisible(false)}>
+                  <Text style={styles.modalButtonText}>Close</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
       </Modal>

@@ -37,6 +37,7 @@
     "extra": {
       "router": {},
       "apiBaseUrl": "https://cargo360-api.onrender.com/",
+      "geoapifyKey": "43b48c16d2084b809197aaa6db21d937",
       "eas": {
         "projectId": "29a388fe-2fe3-4872-b459-3c0e53e2a56f"
       }
