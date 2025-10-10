@@ -84,8 +84,16 @@ export default function BookTruckScreen() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <Truck size={32} color="#2563EB" />
+      <View style={{
+        alignItems: 'center',
+        paddingTop: 60,
+        paddingHorizontal: 24,
+        paddingBottom: 32,
+        backgroundColor: '#024d9a',
+        borderBottomLeftRadius: 60,
+        borderBottomRightRadius: 60,
+      }}>
+        <Truck size={32} color="#FFFFFF" />
         <Text style={styles.title}>Book a Vehicle</Text>
         <Text style={styles.subtitle}>Fill out the details for your booking request</Text>
       </View>
@@ -220,22 +228,25 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 24,
     paddingBottom: 32,
+    backgroundColor: '#024d9a',
+    borderRadius: '0px 0px 60px 60px',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1E293B',
+    color: '#FFFFFF',
     marginTop: 12,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#FFFFFF',
     textAlign: 'center',
   },
   form: {
     paddingHorizontal: 24,
     paddingBottom: 100,
+    marginTop: 10,
   },
   section: {
     marginBottom: 24,

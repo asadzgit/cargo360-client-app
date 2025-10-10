@@ -12,7 +12,7 @@ export default function LoginScreen() {
   const { login } = useBooking();
 
   const handleLogin = async () => {
-    debugger;
+    router.replace('/(tabs)');
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;

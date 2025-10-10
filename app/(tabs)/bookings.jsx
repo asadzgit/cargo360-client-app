@@ -69,7 +69,7 @@ export default function BookingStatusScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <ClipboardList size={32} color="#2563EB" />
+        <ClipboardList size={32} color="#FFFFFF" />
         <Text style={styles.title}>My Bookings</Text>
         <Text style={styles.subtitle}>Track all your booking requests</Text>
       </View>
@@ -174,17 +174,20 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 24,
     paddingBottom: 32,
+    backgroundColor: '#024d9a',
+    borderBottomLeftRadius: 60,
+    borderBottomRightRadius: 60,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1E293B',
+    color: 'white',
     marginTop: 12,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: '#64748B',
+    color: 'white',
     textAlign: 'center',
   },
   bookingsList: {
