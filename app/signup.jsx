@@ -14,8 +14,8 @@ export default function SignupScreen() {
   const { signup } = useBooking();
 
   const handleSignup = async () => {
-    if (!name || !email || !phone || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+    if (!name || !email || !password) {
+      Alert.alert('Error', 'Please fill in name, email and password fields');
       return;
     }
 
@@ -27,7 +27,9 @@ export default function SignupScreen() {
     setLoading(true);
     
     try {
-      const response = await signup({ name, email, phone, password });
+      const payload = { name, email, password };
+      if (phone) payload.phone = phone;
+      const response = await signup(payload);
       if (response?.error) {
         Alert.alert('Error', response.error);
       } else {
@@ -77,7 +79,7 @@ export default function SignupScreen() {
           <Phone size={20} color="#64748B" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
-            placeholder="Phone number"
+            placeholder="Phone number (optional)"
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"

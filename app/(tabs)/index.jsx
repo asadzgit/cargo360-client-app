@@ -1,16 +1,11 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Truck, ClipboardList, User, LogOut } from 'lucide-react-native';
+import { Truck, ClipboardList, User } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, logout, bookings } = useBooking();
-
-  const handleLogout = () => {
-    logout();
-    router.replace('/login');
-  };
+  const { user, bookings } = useBooking();
 
   const pendingBookings = bookings.filter(booking => booking.status === 'Pending').length;
   const acceptedBookings = bookings.filter(booking => booking.status === 'Accepted').length;
@@ -19,12 +14,13 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={styles.welcome}>Welcome back!</Text>
+          <Image 
+            source={require('../../assets/images/icon.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.userEmail}>{user?.email}</Text>
         </View>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <LogOut size={20} color="#64748B" />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.statsContainer}>
@@ -71,7 +67,11 @@ export default function HomeScreen() {
         ) : (
           <View style={styles.recentBookings}>
             {bookings.slice(0, 3).map((booking) => (
-              <View key={booking.id} style={styles.recentBookingCard}>
+              <TouchableOpacity 
+                key={booking.id || booking._id} 
+                style={styles.recentBookingCard}
+                onPress={() => router.push({ pathname: '/booking-detail', params: { bookingId: booking.id || booking._id } })}
+              >
                 <View style={styles.recentBookingInfo}>
                   <Text style={styles.recentBookingTitle}>{booking.vehicleType}</Text>
                   <Text style={styles.recentBookingRoute}>
@@ -89,7 +89,7 @@ export default function HomeScreen() {
                     {booking.status}
                   </Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         )}
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
-    paddingTop: 60,
+    paddingTop: 10,
   },
   header: {
     flexDirection: 'row',
@@ -113,19 +113,16 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     flex: 1,
+    alignItems: 'center',
   },
-  welcome: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginBottom: 4,
+  logo: {
+    width: 100,
+    height: 100,
   },
   userEmail: {
     fontSize: 14,
     color: '#64748B',
-  },
-  logoutButton: {
-    padding: 8,
+    marginTop: 8,
   },
   statsContainer: {
     flexDirection: 'row',

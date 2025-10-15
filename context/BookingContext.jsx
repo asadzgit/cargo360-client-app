@@ -52,15 +52,11 @@ export function BookingProvider({ children }) {
     try {
       setLoading(true);
       const { data } = await authAPI.signup({ name, email, phone, password });
-      if (data?.accessToken) {
-        await setTokens(data.accessToken, data?.refreshToken);
-        if (data?.user) setUser(data.user); else {
-          const me = await authAPI.me();
-          setUser(me.data);
-        }
+      if (data?.message) {
+        Alert.alert('Success', data.message);
+        router.replace('/login');
       } else {
-        // fallback: login after signup
-        await login(email, password);
+        Alert.alert('Error', 'Signup failed. Please try again.');
       }
       return true;
     } catch (e) {
