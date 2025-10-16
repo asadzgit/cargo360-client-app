@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 32,
     backgroundColor: '#024d9a',
-    borderRadius: '0px 0px 60px 60px',
+    // borderRadius: '0px 0px 60px 60px',
   },
   title: {
     fontSize: 24,
