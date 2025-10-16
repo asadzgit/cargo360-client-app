@@ -13,7 +13,8 @@ import {
   MapPin, 
   Calendar, 
   ChevronRight,
-  Package 
+  Package,
+  WeightIcon,
 } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 import { useState, useEffect, useCallback } from 'react';
@@ -136,6 +137,13 @@ export default function BookingStatusScreen() {
                     <Text style={styles.detailText}>{booking.cargoType}</Text>
                   </View>
 
+                  {booking.cargoWeight && (
+                    <View style={styles.detailRow}>
+                      <WeightIcon size={16} color="#64748B" />
+                      <Text style={styles.detailText}>{booking.cargoWeight} kg</Text>
+                    </View>
+                  )}
+
                   <View style={styles.routeContainer}>
                     <View style={styles.routeRow}>
                       <MapPin size={16} color="#059669" />
@@ -177,6 +185,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#024d9a',
     borderBottomLeftRadius: 60,
     borderBottomRightRadius: 60,
+    marginBottom: 24,
   },
   title: {
     fontSize: 24,

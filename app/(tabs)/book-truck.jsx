@@ -154,6 +154,7 @@ export default function BookTruckScreen() {
     >
       <View style={{
         alignItems: 'center',
+        justifyContent: 'center',
         paddingTop: 60,
         paddingHorizontal: 24,
         paddingBottom: 32,
@@ -162,6 +163,7 @@ export default function BookTruckScreen() {
         borderBottomRightRadius: 60,
         // sticky visual overlay
         zIndex: 100,
+        height: 180,
         elevation: 4,
         shadowColor: '#000',
         shadowOpacity: 0.08,
@@ -212,7 +214,7 @@ export default function BookTruckScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.label}>Load Type *</Text>
+          <Text style={styles.label}>Cargo Type *</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionsContainer}>
             {loadTypes.map((type) => (
               <TouchableOpacity

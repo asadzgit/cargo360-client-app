@@ -4,10 +4,9 @@ import {
   ArrowLeft, 
   Truck, 
   Package, 
-  MapPin,
   Calendar, 
   User,
-  
+  ContainerIcon,
   Phone 
 } from 'lucide-react-native';
 import { useBooking } from '../context/BookingContext';
@@ -245,7 +244,7 @@ const openMaps = () => {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color="#1E293B" />
+          <ArrowLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.title}>Booking Details</Text>
       </View>
@@ -284,8 +283,16 @@ const openMaps = () => {
           <View style={styles.detailRow}>
             <Package size={20} color="#059669" />
             <View style={styles.detailContent}>
-              <Text style={styles.detailLabel}>Load Type</Text>
+              <Text style={styles.detailLabel}>Cargo Type</Text>
               <Text style={styles.detailValue}>{booking.loadType}</Text>
+            </View>
+          </View>
+
+          <View style={styles.detailRow}>
+            <ContainerIcon size={20} color="aqua" />
+            <View style={styles.detailContent}>
+              <Text style={styles.detailLabel}>Cargo Weight (kg)</Text>
+              <Text style={styles.detailValue}>{booking.cargoWeight || 'N/A'}</Text>
             </View>
           </View>
 
@@ -498,7 +505,10 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 24,
     paddingBottom: 24,
+    backgroundColor: '#024d9a',
+    color: '#FFFFFF',
     gap: 16,
+    marginBottom: 24,
   },
   backButton: {
     padding: 8,
@@ -506,7 +516,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#FFFFFF',
   },
   content: {
     paddingHorizontal: 24,
