@@ -30,6 +30,7 @@ const loadTypes = [
 
 export default function BookTruckScreen() {
   const [vehicleType, setVehicleType] = useState('');
+  const [customVehicleType, setCustomVehicleType] = useState('');
   const [loadType, setLoadType] = useState('');
   const [fromLocation, setFromLocation] = useState('');
   const [toLocation, setToLocation] = useState('');
@@ -40,8 +41,15 @@ export default function BookTruckScreen() {
   const { addBooking } = useBooking();
 
   const handleSubmit = async () => {
-    if (!vehicleType || !loadType || !fromLocation || !toLocation) {
+    const finalVehicleType = vehicleType === 'Other (please specify)' ? customVehicleType.trim() : vehicleType;
+
+    if (!finalVehicleType || !loadType || !fromLocation || !toLocation) {
       Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    if (vehicleType === 'Other (please specify)' && finalVehicleType.length < 5) {
+      Alert.alert('Error', 'Please specify a vehicle type (min 5 characters).');
       return;
     }
 
@@ -49,7 +57,7 @@ export default function BookTruckScreen() {
 
     try {
       const booking = await addBooking({
-        vehicleType,
+        vehicleType: finalVehicleType,
         loadType,
         fromLocation,
         toLocation,
@@ -102,14 +110,17 @@ export default function BookTruckScreen() {
         <View style={styles.section}>
           <Text style={styles.label}>Vehicle Type *</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionsContainer}>
-            {vehicleTypes.map((type) => (
+            {[...vehicleTypes, 'Other (please specify)'].map((type) => (
               <TouchableOpacity
                 key={type}
                 style={[
                   styles.optionButton,
                   vehicleType === type && styles.optionButtonSelected
                 ]}
-                onPress={() => setVehicleType(type)}
+                onPress={() => {
+                  setVehicleType(type);
+                  if (type !== 'Other (please specify)') setCustomVehicleType('');
+                }}
               >
                 <Text style={[
                   styles.optionText,
@@ -120,6 +131,17 @@ export default function BookTruckScreen() {
               </TouchableOpacity>
             ))}
           </ScrollView>
+          {vehicleType === 'Other (please specify)' && (
+            <View style={[styles.inputContainer, { marginTop: 8 }]}>
+              <TextInput
+                style={styles.input}
+                placeholder="Other vehicle type (min 5 characters)"
+                value={customVehicleType}
+                onChangeText={setCustomVehicleType}
+                placeholderTextColor="#94A3B8"
+              />
+            </View>
+          )}
         </View>
 
         <View style={styles.section}>
