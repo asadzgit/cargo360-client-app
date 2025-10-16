@@ -161,7 +161,7 @@ export default function BookTruckScreen() {
         borderBottomLeftRadius: 60,
         borderBottomRightRadius: 60,
         // sticky visual overlay
-        zIndex: 10,
+        zIndex: 100,
         elevation: 4,
         shadowColor: '#000',
         shadowOpacity: 0.08,

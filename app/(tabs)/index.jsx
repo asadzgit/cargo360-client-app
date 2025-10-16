@@ -75,7 +75,7 @@ export default function HomeScreen() {
                 <View style={styles.recentBookingInfo}>
                   <Text style={styles.recentBookingTitle}>{booking.vehicleType}</Text>
                   <Text style={styles.recentBookingRoute}>
-                    {booking.fromLocation.substring(0, 50).concat('...')} <MapPin />...<MapPin /> {booking.toLocation.substring(0, 50).concat('...')}
+                    {booking.pickupLocation} <MapPin /> {booking.dropLocation}
                   </Text>
                 </View>
                 <View style={[
