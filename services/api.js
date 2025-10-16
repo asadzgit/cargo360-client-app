@@ -97,3 +97,7 @@ export const bookingAPI = {
   cancel: (id) => api.patch(`/shipments/${id}/cancel`),
   currentLocation: (id) => api.get(`/location/shipments/${id}/current`),
 };
+
+export const userAPI = {
+  updateMe: (body) => api.patch('/users/me', body),
+};

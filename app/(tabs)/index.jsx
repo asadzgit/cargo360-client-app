@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Truck, ClipboardList, User } from 'lucide-react-native';
+import { Truck, ClipboardList, User, MapPin } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 
 export default function HomeScreen() {
@@ -75,7 +75,7 @@ export default function HomeScreen() {
                 <View style={styles.recentBookingInfo}>
                   <Text style={styles.recentBookingTitle}>{booking.vehicleType}</Text>
                   <Text style={styles.recentBookingRoute}>
-                    {booking.fromLocation} → {booking.toLocation}
+                    {booking.fromLocation.substring(0, 50).concat('...')} <MapPin />...<MapPin /> {booking.toLocation.substring(0, 50).concat('...')}
                   </Text>
                 </View>
                 <View style={[

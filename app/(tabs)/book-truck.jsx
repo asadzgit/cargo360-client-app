@@ -146,7 +146,12 @@ export default function BookTruckScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      stickyHeaderIndices={[0]}
+      contentContainerStyle={{ paddingBottom: 24 }}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={{
         alignItems: 'center',
         paddingTop: 60,
@@ -155,6 +160,13 @@ export default function BookTruckScreen() {
         backgroundColor: '#024d9a',
         borderBottomLeftRadius: 60,
         borderBottomRightRadius: 60,
+        // sticky visual overlay
+        zIndex: 10,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOpacity: 0.08,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 3 },
       }}>
         <Truck size={32} color="#FFFFFF" />
         <Text style={styles.title}>Book a Vehicle</Text>
