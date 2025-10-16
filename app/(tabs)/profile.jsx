@@ -155,7 +155,7 @@ export default function ProfileScreen() {
       >
         <View style={styles.header}>
           {/* <View style={styles.profilePicture}> */}
-            <User size={32} color="#FFFFFF" />
+            <User size={32} color="#FFFFFF" style={{alignSelf: 'center'}} />
           {/* </View> */}
           <Text style={styles.userName}>{profile?.name || 'User'}</Text>
           <Text style={styles.userEmail}>{profile?.email || user?.email}</Text>
@@ -366,9 +366,10 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: 80,
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    // paddingBottom: 32,
+    height: 180,
     backgroundColor: '#024d9a',
     borderBottomLeftRadius: 60,
     borderBottomRightRadius: 60,
@@ -396,11 +397,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#FFFFFF',
+    textAlign: 'center',
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 14,
     color: '#FFFFFF',
+    textAlign: 'center',
   },
   statsSection: {
     flexDirection: 'row',

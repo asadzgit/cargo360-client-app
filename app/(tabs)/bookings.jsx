@@ -19,6 +19,7 @@ import {
 import { useBooking } from '../../context/BookingContext';
 import { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import { humanize } from '../../utils';
 
 export default function BookingStatusScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -106,7 +107,7 @@ export default function BookingStatusScreen() {
               >
                 <View style={styles.bookingHeader}>
                   <View style={styles.bookingInfo}>
-                    <Text style={styles.bookingId}>#{booking.id || booking._id}</Text>
+                    <Text style={styles.bookingId}>C360-PK-{booking.id || booking._id}</Text>
                     <View style={[
                       styles.statusBadge,
                       booking.status === 'Accepted' ? styles.statusAccepted : 
@@ -129,12 +130,12 @@ export default function BookingStatusScreen() {
                 <View style={styles.bookingDetails}>
                   <View style={styles.detailRow}>
                     <Truck size={16} color="#64748B" />
-                    <Text style={styles.detailText}>{booking.vehicleType}</Text>
+                    <Text style={styles.detailText}>{humanize(booking.vehicleType)}</Text>
                   </View>
                   
                   <View style={styles.detailRow}>
                     <Package size={16} color="#64748B" />
-                    <Text style={styles.detailText}>{booking.cargoType}</Text>
+                    <Text style={styles.detailText}>{humanize(booking.cargoType)}</Text>
                   </View>
 
                   {booking.cargoWeight && (
@@ -186,6 +187,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 60,
     borderBottomRightRadius: 60,
     marginBottom: 24,
+    height: 180,
   },
   title: {
     fontSize: 24,

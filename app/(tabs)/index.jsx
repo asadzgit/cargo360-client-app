@@ -1,7 +1,8 @@
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Truck, ClipboardList, User, MapPin } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
+import { humanize } from '../../utils';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -22,78 +23,88 @@ export default function HomeScreen() {
           <Text style={styles.userEmail}>{user?.email}</Text>
         </View>
       </View>
-
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{bookings.length}</Text>
-          <Text style={styles.statLabel}>Total Bookings</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{pendingBookings}</Text>
-          <Text style={styles.statLabel}>Pending</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{acceptedBookings}</Text>
-          <Text style={styles.statLabel}>Accepted</Text>
-        </View>
-      </View>
-
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity 
-          style={styles.primaryAction}
-          onPress={() => router.push('/(tabs)/book-truck')}
-        >
-          <Truck size={24} color="#FFFFFF" />
-          <Text style={styles.primaryActionText}>Book a Vehicle</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.secondaryAction}
-          onPress={() => router.push('/(tabs)/bookings')}
-        >
-          <ClipboardList size={24} color="#2563EB" />
-          <Text style={styles.secondaryActionText}>View My Bookings</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.recentSection}>
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
-        {bookings.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Truck size={48} color="#CBD5E1" />
-            <Text style={styles.emptyText}>No bookings yet</Text>
-            <Text style={styles.emptySubtext}>Start by booking your first vehicle</Text>
+      <ScrollView style={{marginBottom: 10}}>
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{bookings.length}</Text>
+            <Text style={styles.statLabel}>Total Bookings</Text>
           </View>
-        ) : (
-          <View style={styles.recentBookings}>
-            {bookings.slice(0, 3).map((booking) => (
-              <TouchableOpacity 
-                key={booking.id || booking._id} 
-                style={styles.recentBookingCard}
-                onPress={() => router.push({ pathname: '/booking-detail', params: { bookingId: booking.id || booking._id } })}
-              >
-                <View style={styles.recentBookingInfo}>
-                  <Text style={styles.recentBookingTitle}>{booking.vehicleType}</Text>
-                  <Text style={styles.recentBookingRoute}>
-                    {booking.pickupLocation} <MapPin /> {booking.dropLocation}
-                  </Text>
-                </View>
-                <View style={[
-                  styles.statusBadge,
-                  booking.status === 'Accepted' ? styles.statusAccepted : styles.statusPending
-                ]}>
-                  <Text style={[
-                    styles.statusText,
-                    booking.status === 'Accepted' ? styles.statusTextAccepted : styles.statusTextPending
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{pendingBookings}</Text>
+            <Text style={styles.statLabel}>Pending</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{acceptedBookings}</Text>
+            <Text style={styles.statLabel}>Accepted</Text>
+          </View>
+        </View>
+
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity 
+            style={styles.primaryAction}
+            onPress={() => router.push('/(tabs)/book-truck')}
+          >
+            <Truck size={24} color="#FFFFFF" />
+            <Text style={styles.primaryActionText}>Book a Vehicle</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.secondaryAction}
+            onPress={() => router.push('/(tabs)/bookings')}
+          >
+            <ClipboardList size={24} color="#2563EB" />
+            <Text style={styles.secondaryActionText}>View My Bookings</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.recentSection}>
+          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          {bookings.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Truck size={48} color="#CBD5E1" />
+              <Text style={styles.emptyText}>No bookings yet</Text>
+              <Text style={styles.emptySubtext}>Start by booking your first vehicle</Text>
+            </View>
+          ) : (
+            <View style={styles.recentBookings}>
+              {bookings.slice(0, 3).map((booking) => (
+                <TouchableOpacity 
+                  key={booking.id || booking._id} 
+                  style={styles.recentBookingCard}
+                  onPress={() => router.push({ pathname: '/booking-detail', params: { bookingId: booking.id || booking._id } })}
+                >
+                  <View style={styles.recentBookingInfo}>
+                    <Text style={styles.recentBookingId}>C360-PK-{booking.id}</Text>
+                    <Text style={styles.recentBookingTitle}>{humanize(booking.vehicleType)}</Text>
+                    <View style={styles.routeContainer}>
+                      <View style={styles.routeRow}>
+                        <MapPin size={16} color="#059669" />
+                        <Text style={styles.routeText}>{booking.pickupLocation || booking.fromLocation}</Text>
+                      </View>
+                      <View style={styles.routeConnector} />
+                      <View style={styles.routeRow}>
+                        <MapPin size={16} color="#DC2626" />
+                        <Text style={styles.routeText}>{booking.dropLocation || booking.toLocation}</Text>
+                      </View>
+                    </View>
+                  </View>
+                  <View style={[
+                    styles.statusBadge,
+                    booking.status === 'Accepted' ? styles.statusAccepted : styles.statusPending
                   ]}>
-                    {booking.status}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-      </View>
+                    <Text style={[
+                      styles.statusText,
+                      booking.status === 'Accepted' ? styles.statusTextAccepted : styles.statusTextPending
+                    ]}>
+                      {booking.status}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -102,7 +113,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
-    paddingTop: 10,
   },
   header: {
     flexDirection: 'row',
@@ -110,6 +120,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 24,
     marginBottom: 32,
+    paddingTop: 50,
+    backgroundColor: '#024d9a',
+    height: 180,
+    borderBottomLeftRadius: 60,
+    borderBottomRightRadius: 60,
   },
   headerContent: {
     flex: 1,
@@ -118,6 +133,8 @@ const styles = StyleSheet.create({
   logo: {
     width: 100,
     height: 100,
+    backgroundColor: '#ffff',
+    borderRadius: 60,
   },
   userEmail: {
     fontSize: 14,
@@ -227,6 +244,15 @@ const styles = StyleSheet.create({
   recentBookingInfo: {
     flex: 1,
   },
+  recentBookingId: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    paddingBottom: 4,
+  },
   recentBookingTitle: {
     fontSize: 14,
     fontWeight: '600',
@@ -258,4 +284,24 @@ const styles = StyleSheet.create({
   statusTextPending: {
     color: '#D97706',
   },
+  routeContainer: {
+    paddingLeft: 4,
+  },
+  routeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  routeConnector: {
+    width: 2,
+    height: 16,
+    backgroundColor: '#E2E8F0',
+    marginLeft: 7,
+    marginVertical: 4,
+  },
+  routeText: {
+    fontSize: 14,
+    color: '#64748B',
+    flex: 1,
+  }
 });

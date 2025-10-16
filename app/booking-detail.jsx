@@ -7,12 +7,14 @@ import {
   Calendar, 
   User,
   ContainerIcon,
+  ClipboardList,
   Phone 
 } from 'lucide-react-native';
 import { useBooking } from '../context/BookingContext';
 import { bookingAPI } from '../services/api';
 import Constants from 'expo-constants';
 import { useEffect, useState } from 'react';
+import { humanize } from '../utils';
 
 export default function BookingDetailScreen() {
   const router = useRouter();
@@ -241,17 +243,23 @@ const openMaps = () => {
 };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      stickyHeaderIndices={[0]}
+      contentContainerStyle={{ paddingBottom: 24 }}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
+        <ClipboardList size={32} color="#FFFFFF" style={{alignSelf: 'center'}} />
         <Text style={styles.title}>Booking Details</Text>
       </View>
 
       <View style={styles.content}>
         <View style={styles.statusSection}>
-          <Text style={styles.bookingId}>Booking #{booking.id}</Text>
+          <Text style={styles.bookingId}>Booking id: C360-PK-{booking.id}</Text>
           <View style={[
             styles.statusBadge,
             booking.status === 'Accepted' ? styles.statusAccepted : 
@@ -276,7 +284,7 @@ const openMaps = () => {
             <Truck size={20} color="#2563EB" />
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Vehicle Type</Text>
-              <Text style={styles.detailValue}>{booking.vehicleType}</Text>
+              <Text style={styles.detailValue}>{humanize(booking.vehicleType)}</Text>
             </View>
           </View>
 
@@ -284,7 +292,7 @@ const openMaps = () => {
             <Package size={20} color="#059669" />
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Cargo Type</Text>
-              <Text style={styles.detailValue}>{booking.loadType}</Text>
+              <Text style={styles.detailValue}>{humanize(booking.loadType)}</Text>
             </View>
           </View>
 
@@ -502,21 +510,38 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: 50,
+    paddingBottom: 15,
     paddingHorizontal: 24,
-    paddingBottom: 24,
     backgroundColor: '#024d9a',
     color: '#FFFFFF',
     gap: 16,
     marginBottom: 24,
+    zIndex: 10,
+    elevation: 4,               // Android
+    shadowColor: '#000',        // iOS
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    height: 180,
+    borderBottomLeftRadius: 60,
+    borderBottomRightRadius: 60,
   },
   backButton: {
     padding: 8,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    marginTop: 12,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: 'white',
+    textAlign: 'center',
   },
   content: {
     paddingHorizontal: 24,
