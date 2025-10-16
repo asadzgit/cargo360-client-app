@@ -1,11 +1,35 @@
 import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { User, Mail, Phone, MapPin, LogOut, Contact, Settings, CircleHelp as HelpCircle } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
+import { authAPI } from '../../services/api';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout, bookings } = useBooking();
+
+  const [profile, setProfile] = useState(user || null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const { data } = await authAPI.me();
+        // API returns { user: { ... } }
+        const u = data?.user || data;
+        if (mounted) setProfile(u);
+      } catch (e) {
+        // If unauthorized, route to login
+        router.replace('/login');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -22,8 +46,8 @@ export default function ProfileScreen() {
         <View style={styles.profilePicture}>
           <User size={32} color="#FFFFFF" />
         </View>
-        <Text style={styles.userName}>John Doe</Text>
-        <Text style={styles.userEmail}>{user?.email}</Text>
+        <Text style={styles.userName}>{profile?.name || 'User'}</Text>
+        <Text style={styles.userEmail}>{profile?.email || user?.email}</Text>
       </View>
 
       {/* <View style={styles.statsSection}>
@@ -49,14 +73,14 @@ export default function ProfileScreen() {
             <User size={20} color="#64748B" />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Name</Text>
-              <Text style={styles.infoValue}>{user?.name}</Text>
+              <Text style={styles.infoValue}>{profile?.name || user?.name || '—'}</Text>
             </View>
           </View>
           <View style={styles.infoRow}>
             <Mail size={20} color="#64748B" />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Email</Text>
-              <Text style={styles.infoValue}>{user?.email}</Text>
+              <Text style={styles.infoValue}>{profile?.email || user?.email || '—'}</Text>
             </View>
           </View>
           
@@ -65,7 +89,7 @@ export default function ProfileScreen() {
               <Phone size={20} color="#64748B" />
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Phone</Text>
-                <Text style={styles.infoValue}>{user.phone}</Text>
+                <Text style={styles.infoValue}>{profile?.phone || user?.phone}</Text>
               </View>
             </View>
           </>}
