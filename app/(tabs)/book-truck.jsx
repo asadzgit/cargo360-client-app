@@ -36,6 +36,8 @@ export default function BookTruckScreen() {
   const [toLocation, setToLocation] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+  const [cargoWeight, setCargoWeight] = useState(''); // kg (optional)
+
   
   const [pickupOptions, setPickupOptions] = useState([]);
   const [dropOptions, setDropOptions] = useState([]);
@@ -111,6 +113,7 @@ export default function BookTruckScreen() {
         fromLocation,
         toLocation,
         description,
+        cargoWeight: cargoWeight ? cargoWeight : undefined,
       });
 
       Alert.alert(
@@ -128,6 +131,7 @@ export default function BookTruckScreen() {
               setDescription('');
               setPickupOptions([]);
               setDropOptions([]);
+              setCargoWeight('');
               // Navigate to home
               router.push('/(tabs)');
             }
@@ -216,6 +220,27 @@ export default function BookTruckScreen() {
               </TouchableOpacity>
             ))}
           </ScrollView>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.label}>
+            Cargo Weight (kg) <Text style={{ color: '#94A3B8' }}>(optional)</Text>
+          </Text>
+          <View style={styles.inputContainer}>
+            <Package size={20} color="#64748B" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Enter cargo weight in kg (optional)"
+              value={cargoWeight}
+              onChangeText={(t) => {
+                // optional: basic sanitize to numbers and dot; remove non-numerics
+                const cleaned = t.replace(/[^0-9.]/g, '');
+                setCargoWeight(cleaned);
+              }}
+              keyboardType="numeric"
+              placeholderTextColor="#94A3B8"
+            />
+          </View>
         </View>
 
           {/* new from location inputs */}
