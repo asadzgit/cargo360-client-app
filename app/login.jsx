@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Truck, Mail, Lock } from 'lucide-react-native';
+import { Truck, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { useBooking } from '../context/BookingContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
   const router = useRouter();
   const { login } = useBooking();
 
@@ -58,13 +60,25 @@ export default function LoginScreen() {
         <View style={styles.inputContainer}>
           <Lock size={20} color="#64748B" style={styles.inputIcon} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { paddingRight: 44 }]}
             placeholder="Password"
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
             placeholderTextColor="#94A3B8"
           />
+          <TouchableOpacity
+            onPress={() => setShowPassword((v) => !v)}
+            style={styles.inputRightIcon}
+            accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? (
+              <EyeOff size={20} color="#64748B" />
+            ) : (
+              <Eye size={20} color="#64748B" />
+            )}
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity 
@@ -166,5 +180,12 @@ const styles = StyleSheet.create({
     color: '#2563EB',
     fontSize: 14,
     fontWeight: '600',
+  },
+  inputRightIcon: {
+    position: 'absolute',
+    right: 12,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
