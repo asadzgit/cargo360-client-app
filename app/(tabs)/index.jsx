@@ -8,8 +8,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const { user, bookings } = useBooking();
 
-  const pendingBookings = bookings.filter(booking => booking.status === 'Pending').length;
-  const acceptedBookings = bookings.filter(booking => booking.status === 'Accepted').length;
+  const pendingBookings = bookings.filter(booking => booking.status.toLowerCase() === 'pending').length;
+  const acceptedBookings = bookings.filter(booking => booking.status.toLowerCase() === 'accepted').length;
 
   return (
     <View style={styles.container}>

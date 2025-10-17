@@ -36,7 +36,7 @@ export default function BookTruckScreen() {
   const [toLocation, setToLocation] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
-  const [cargoWeight, setCargoWeight] = useState(''); // kg (optional)
+  const [cargoWeight, setCargoWeight] = useState('');
 
   
   const [pickupOptions, setPickupOptions] = useState([]);
@@ -58,8 +58,17 @@ export default function BookTruckScreen() {
     setLoad(true);
     try {
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=pk&limit=10&addressdetails=1`;
-      const resp = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+      const resp = await fetch(
+        url, 
+        { headers: 
+          { 'Accept-Language': 'en', 'User-Agent': 'Cargo360App/1.0 (contact: info@cargo360pk.com)',
+            'Referer': 'https://cargo360pk.com'
+          }
+        }
+      );
+      console.log("nominatim respone:", resp)
       const data = await resp.json();
+      console.log("nominatim respone:", data)
       const opts = (Array.isArray(data) ? data : []).map((item) => ({
         id: `${item.place_id}`,
         label: item.display_name,
@@ -70,6 +79,7 @@ export default function BookTruckScreen() {
       setOpts(opts);
     } catch (_e) {
       setOpts([]);
+      console.log("nominatim error:", _e)
     } finally {
       setLoad(false);
     }
@@ -94,7 +104,7 @@ export default function BookTruckScreen() {
   const handleSubmit = async () => {
     const finalVehicleType = vehicleType === 'Other (please specify)' ? customVehicleType.trim() : vehicleType;
 
-    if (!finalVehicleType || !loadType || !fromLocation || !toLocation) {
+    if (!finalVehicleType || !loadType || !fromLocation || !toLocation || !cargoWeight) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -113,12 +123,12 @@ export default function BookTruckScreen() {
         fromLocation,
         toLocation,
         description,
-        cargoWeight: cargoWeight ? cargoWeight : undefined,
+        cargoWeight,
       });
 
       Alert.alert(
         'Booking Confirmed!', 
-        `Your booking request (#${booking?.id || booking?._id || 'N/A'}) has been submitted successfully. You will be notified when a driver accepts your request.`,
+        `Your booking request (C360-PK-${booking?.data?.shipment?.id}) has been submitted successfully. You will be notified when a driver accepts your request.`,
         [
           {
             text: 'OK',
@@ -238,13 +248,13 @@ export default function BookTruckScreen() {
 
         <View style={styles.section}>
           <Text style={styles.label}>
-            Cargo Weight (kg) <Text style={{ color: '#94A3B8' }}>(optional)</Text>
+            Cargo Weight (kg) *<Text style={{ color: '#94A3B8' }}></Text>
           </Text>
           <View style={styles.inputContainer}>
             <Package size={20} color="#64748B" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Enter cargo weight in kg (optional)"
+              placeholder="Enter cargo weight in kg"
               value={cargoWeight}
               onChangeText={(t) => {
                 // optional: basic sanitize to numbers and dot; remove non-numerics
@@ -260,6 +270,11 @@ export default function BookTruckScreen() {
           {/* new from location inputs */}
           <View style={[styles.section, { zIndex: 200, elevation: 3 }]}>
             <Text style={styles.label}>From Location *</Text>
+            {__DEV__ && (
+  <Text style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>
+    {pickupLoading ? 'Searching...' : `Results: ${pickupOptions?.length}`}
+  </Text>
+)}
             <View style={{ position: 'relative' }}>
               <View style={styles.inputContainer}>
                 <MapPin size={20} color="#64748B" style={styles.inputIcon} />

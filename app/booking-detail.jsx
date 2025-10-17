@@ -53,6 +53,9 @@ const [locAddress, setLocAddress] = useState('');
       createdAt: bookingFromContext.createdAt,
       status: bookingFromContext.status || 'Pending',
       description: bookingFromContext.description,
+      cargoWeight: bookingFromContext.cargoWeight,
+      cargoSize: bookingFromContext.cargoSize,
+      budget: bookingFromContext.budget,
     };
   });
   const [error, setError] = useState(null);
@@ -63,6 +66,7 @@ const [locAddress, setLocAddress] = useState('');
       (async () => {
         try {
           const data = await getBookingById(bookingId);
+          console.log("booking data", data)
           if (!mounted) return;
           const normalized = {
             id: data?.id || data?._id,
@@ -73,6 +77,9 @@ const [locAddress, setLocAddress] = useState('');
             createdAt: data?.createdAt,
             status: data?.status || 'Pending',
             description: data?.description,
+            cargoWeight: data?.cargoWeight,
+            cargoSize: data?.cargoSize,
+            budget: data?.budget,
           };
           setBooking(normalized);
         } catch (e) {
@@ -85,6 +92,7 @@ const [locAddress, setLocAddress] = useState('');
   }, [bookingId]);
 
   useEffect(() => {
+    console.log("booking", booking)
     if (booking) {
       setForm({
         pickupLocation: booking.fromLocation || '',
