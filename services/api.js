@@ -39,7 +39,7 @@ api.interceptors.response.use(
   (r) => r,
   async (error) => {
     const status = error?.response?.status;
-    const code = error?.response?.code;
+    const code = error?.response?.code || error?.response?.data?.code;
     const original = error.config || {};
 
     if (status === 401 && !original._retry && code !== 4100) {
@@ -88,6 +88,7 @@ export const authAPI = {
   resendVerification: (email) => api.post('/auth/resend-verification', { email }),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (code, password) => api.post('/auth/reset-password', { code, password }),
+  deletionLink: () => api.post('/auth/deletion-link'),
 };
 
 export const bookingAPI = {

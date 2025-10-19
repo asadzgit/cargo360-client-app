@@ -1,5 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, Linking, TextInput, Modal, ScrollView } from 'react-native';
-
+import { Alert, View, Text, TouchableOpacity, StyleSheet, Linking, TextInput, Modal, ScrollView } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { User, Mail, Phone, MapPin, LogOut, Contact, Settings, CircleHelp as HelpCircle, Pencil, Lock } from 'lucide-react-native';
@@ -38,6 +37,8 @@ export default function ProfileScreen() {
   const [newPassword, setNewPassword] = useState('');
   const [pwdLoading, setPwdLoading] = useState(false);
   const [pwdError, setPwdError] = useState('');
+
+  const [delLoading, setDelLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -139,6 +140,21 @@ export default function ProfileScreen() {
       setPwdError(e?.message || 'Failed to change password.');
     } finally {
       setPwdLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      setDelLoading(true);
+      const { data } = await authAPI.deletionLink();
+      // Prefer server-provided URL; fallback to building with token if needed
+      const url = data?.url || `https://cargo360pk.com/delete-mobile-account#token=${encodeURIComponent(data?.token)}`;
+      if (!url) throw new Error('Deletion link unavailable.');
+      await Linking.openURL(url);
+    } catch (e) {
+      Alert.alert('Error', e?.message || 'Unable to open the deletion page.');
+    } finally {
+      setDelLoading(false);
     }
   };
 
@@ -298,6 +314,9 @@ export default function ProfileScreen() {
 
         <View style={styles.supportSection}>
           <View style={styles.divider} />
+          <TouchableOpacity style={styles.logoutButton}  onPress={handleDeleteAccount} disabled={delLoading}>
+            <Text style={{ color: '#DC2626' }}>{delLoading ? 'Opening…' : 'Delete Account'}</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <LogOut size={20} color="#DC2626" />
             <Text style={styles.logoutText}>Sign Out</Text>
