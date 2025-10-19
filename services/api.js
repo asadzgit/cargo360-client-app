@@ -39,9 +39,10 @@ api.interceptors.response.use(
   (r) => r,
   async (error) => {
     const status = error?.response?.status;
+    const code = error?.response?.code;
     const original = error.config || {};
 
-    if (status === 401 && !original._retry) {
+    if (status === 401 && !original._retry && code !== 4100) {
       original._retry = true;
 
       if (!isRefreshing) {
