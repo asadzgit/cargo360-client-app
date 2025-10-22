@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { 
   View, 
   Text, 
+  Pressable,
   TextInput, 
   TouchableOpacity, 
   StyleSheet, 
@@ -9,7 +10,7 @@ import {
   Alert 
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Truck, Package, MapPin, ArrowRight } from 'lucide-react-native';
+import { Truck, Package, MapPin, ArrowRight,Box } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 
 const vehicleTypes = [
@@ -37,6 +38,12 @@ export default function BookTruckScreen() {
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [cargoWeight, setCargoWeight] = useState('');
+  
+  const [numContainers, setNumContainers] = useState('');
+  const [insurance, setInsurance] = useState(false);
+  const [salesTax, setSalesTax] = useState(false);
+
+
 
   
   const [pickupOptions, setPickupOptions] = useState([]);
@@ -104,7 +111,7 @@ export default function BookTruckScreen() {
   const handleSubmit = async () => {
     const finalVehicleType = vehicleType === 'Other (please specify)' ? customVehicleType.trim() : vehicleType;
 
-    if (!finalVehicleType || !loadType || !fromLocation || !toLocation || !cargoWeight) {
+    if (!finalVehicleType || !loadType || !numContainers || !fromLocation || !toLocation || !cargoWeight) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -120,6 +127,7 @@ export default function BookTruckScreen() {
       const booking = await addBooking({
         vehicleType: finalVehicleType,
         loadType,
+        numContainers,
         fromLocation,
         toLocation,
         description,
@@ -223,7 +231,7 @@ export default function BookTruckScreen() {
           )}
         </View>
 
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <Text style={styles.label}>Cargo Type *</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionsContainer}>
             {loadTypes.map((type) => (
@@ -244,7 +252,24 @@ export default function BookTruckScreen() {
               </TouchableOpacity>
             ))}
           </ScrollView>
-        </View>
+        </View> */}
+
+        {/* Cargo Type Input Field */}
+<View style={styles.section}>
+  <Text style={styles.label}>Cargo Type *</Text>
+  <View style={styles.inputContainer}>
+    <Package size={20} color="#64748B" style={styles.inputIcon} />
+    <TextInput
+      style={styles.input}
+      placeholder="e.g.Electronics, Furniture, Food"
+      value={loadType}
+      onChangeText={setLoadType}
+      placeholderTextColor="#94A3B8"
+      keyboardType="default"
+    />
+  </View>
+</View>
+
 
         <View style={styles.section}>
           <Text style={styles.label}>
@@ -267,14 +292,50 @@ export default function BookTruckScreen() {
           </View>
         </View>
 
+        {/* New Field: No. of Containers */}
+<View style={styles.section}>
+  <Text style={styles.label}>No. of Containers/vehicles *</Text>
+  <View style={styles.inputContainer}>
+    <Truck size={20} color="#64748B" style={styles.inputIcon} />
+    <TextInput
+      style={styles.input}
+      placeholder="numbers of containers/vehicles"
+      value={numContainers}
+      onChangeText={setNumContainers}
+      keyboardType="default"
+      placeholderTextColor="#94A3B8"
+    />
+  </View>
+</View>
+{/* --- */}
+
+{/* Cargo Description */}
+<View style={styles.section}>
+  <Text style={styles.label}>Cargo Description</Text>
+  <View style={styles.inputContainer}>
+    <Box size={20} color="#64748B" style={styles.inputIcon} />
+    <TextInput
+      style={[styles.input, styles.textArea]}
+      placeholder="Describe your cargo in detail (e.g., fragile electronics, heavy machinery, perishable goods)"
+      value={description}
+      onChangeText={setDescription}
+      multiline
+      numberOfLines={4}
+      textAlignVertical="top"
+      placeholderTextColor="#94A3B8"
+    />
+  </View>
+</View>
+
+
           {/* new from location inputs */}
           <View style={[styles.section, { zIndex: 200, elevation: 3 }]}>
-            <Text style={styles.label}>From Location *</Text>
-            {__DEV__ && (
+            <Text style={styles.label}>Pickup  Location *</Text>
+            {/* {__DEV__ && (
   <Text style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>
     {pickupLoading ? 'Searching...' : `Results: ${pickupOptions?.length}`}
   </Text>
-)}
+)} */}
             <View style={{ position: 'relative' }}>
               <View style={styles.inputContainer}>
                 <MapPin size={20} color="#64748B" style={styles.inputIcon} />
@@ -318,7 +379,7 @@ export default function BookTruckScreen() {
 
           {/* new TO location inputs */}
           <View style={[styles.section, { zIndex: 100, elevation: 2 }]}>
-            <Text style={styles.label}>To Location *</Text>
+            <Text style={styles.label}>Drop off Location *</Text>
             <View style={{ position: 'relative' }}>
               <View style={styles.inputContainer}>
                 <MapPin size={20} color="#64748B" style={styles.inputIcon} />
@@ -360,22 +421,59 @@ export default function BookTruckScreen() {
             </View>
           </View>
 
-        <View style={styles.section}>
-          <Text style={styles.label}>Additional Details</Text>
-          <View style={styles.inputContainer}>
-            <Package size={20} color="#64748B" style={styles.inputIcon} />
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Any special requirements or instructions..."
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-              placeholderTextColor="#94A3B8"
-            />
-          </View>
-        </View>
+        {/* Additional Options (Insurance & Sales Tax) */}
+<View style={styles.section}>
+  <Text style={styles.label}>Additional Options</Text>
+
+  {/* Insurance Option */}
+  <Pressable
+    onPress={() => setInsurance(!insurance)}
+    style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}
+  >
+    <View
+      style={{
+        width: 22,
+        height: 22,
+        borderWidth: 2,
+        borderColor: '#64748B',
+        borderRadius: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: insurance ? '#2563EB' : 'transparent',
+      }}
+    >
+      {insurance && <Text style={{ color: 'white', fontWeight: 'bold' }}>✓</Text>}
+    </View>
+    <Text style={{ marginLeft: 8, color: '#334155', fontSize: 15 }}>
+      Insurance
+    </Text>
+  </Pressable>
+
+  {/* Sales Tax Option */}
+  <Pressable
+    onPress={() => setSalesTax(!salesTax)}
+    style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}
+  >
+    <View
+      style={{
+        width: 22,
+        height: 22,
+        borderWidth: 2,
+        borderColor: '#64748B',
+        borderRadius: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: salesTax ? '#2563EB' : 'transparent',
+      }}
+    >
+      {salesTax && <Text style={{ color: 'white', fontWeight: 'bold' }}>✓</Text>}
+    </View>
+    <Text style={{ marginLeft: 8, color: '#334155', fontSize: 15 }}>
+      Sales Tax Invoice
+    </Text>
+  </Pressable>
+</View>
+
 
         <View style={styles.routePreview}>
           <View style={styles.routeInfo}>

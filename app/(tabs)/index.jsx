@@ -1,12 +1,28 @@
-import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
+// // changes start from here---
+import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Truck, ClipboardList, User, MapPin } from 'lucide-react-native';
+import { Truck, ClipboardList, User, MapPin, RefreshCw } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 import { humanize } from '../../utils';
+import { useState, useCallback } from 'react';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, bookings } = useBooking();
+  const { user, bookings, fetchBookings } = useBooking();
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+  try {
+    setRefreshing(true);
+    await fetchBookings(undefined, { force: true });
+  } catch (error) {
+    console.error('Error refreshing bookings:', error);
+  } finally {
+    setRefreshing(false);
+  }
+}, [fetchBookings]);
+
+
 
   const pendingBookings = bookings.filter(booking => booking.status.toLowerCase() === 'pending').length;
   const acceptedBookings = bookings.filter(booking => booking.status.toLowerCase() === 'accepted').length;
@@ -23,7 +39,17 @@ export default function HomeScreen() {
           <Text style={styles.userEmail}>{user?.email}</Text>
         </View>
       </View>
-      <ScrollView style={{marginBottom: 10}}>
+      <ScrollView
+  style={{ marginBottom: 10 }}
+  refreshControl={
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      colors={['#2563EB']}
+      tintColor="#2563EB"
+    />
+  }
+>
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{bookings.length}</Text>
@@ -58,7 +84,19 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.recentSection}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          <View style={styles.recentHeader}>
+    <Text style={styles.sectionTitle}>Recent Activity</Text>
+    <TouchableOpacity
+      style={styles.refreshInlineButton}
+      onPress={onRefresh}
+      disabled={refreshing}
+    >
+      <RefreshCw size={16} color="#FFFFFF" />
+      <Text style={styles.refreshInlineText}>
+        {refreshing ? 'Refreshing...' : 'Refresh'}
+      </Text>
+    </TouchableOpacity>
+  </View>
           {bookings.length === 0 ? (
             <View style={styles.emptyState}>
               <Truck size={48} color="#CBD5E1" />
@@ -303,5 +341,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748B',
     flex: 1,
-  }
+  },
+  recentHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 16,
+  },
+  refreshInlineButton: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#ed8411',
+  paddingHorizontal: 10,
+  paddingVertical: 6,
+  borderRadius: 8,
+  marginTop:-17,
+},
+
+refreshInlineText: {
+  color: '#FFFFFF',
+  fontSize: 13,
+  fontWeight: '600',
+  marginLeft: 6,
+},
+
 });
+
+
+// changes----

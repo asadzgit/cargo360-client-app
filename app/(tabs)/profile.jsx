@@ -1,7 +1,7 @@
 import { Alert, View, Text, TouchableOpacity, StyleSheet, Linking, TextInput, Modal, ScrollView } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { User, Mail, Phone, MapPin, LogOut, Contact, Settings, CircleHelp as HelpCircle, Pencil, Lock } from 'lucide-react-native';
+import { User, Mail, Phone, MapPin, LogOut, Contact, Settings, CircleHelp as HelpCircle, Pencil, Lock, X } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 import { authAPI, userAPI } from '../../services/api';
 
@@ -196,9 +196,21 @@ export default function ProfileScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Account Information</Text>
             <TouchableOpacity style={styles.editBtn} onPress={handleToggleEdit}>
-              <Pencil size={16} color="#2563EB" />
-              <Text style={styles.editBtnText}>{editing ? 'Cancel' : 'Edit Profile'}</Text>
-            </TouchableOpacity>
+              {editing ? (
+                <X size={16} color="#DC2626" /> // red cross for cancel
+                ) : (
+                <Pencil size={16} color="#2563EB" />
+                )}
+                <Text
+                style={[
+      styles.editBtnText,
+      editing && { color: '#DC2626' }, // red text when cancel
+      ]}
+      >
+        {editing ? 'Cancel' : 'Edit Profile'}
+        </Text>
+        </TouchableOpacity>
+
           </View>
           
           <View style={styles.infoCard}>
