@@ -292,21 +292,33 @@ export default function BookTruckScreen() {
           </View>
         </View>
 
-        {/* New Field: No. of Containers */}
+        {/* No. of Containers/Vehicles Field */}
 <View style={styles.section}>
-  <Text style={styles.label}>No. of Containers/vehicles *</Text>
+  <Text style={styles.label}>No. of Containers/Vehicles *</Text>
   <View style={styles.inputContainer}>
     <Truck size={20} color="#64748B" style={styles.inputIcon} />
     <TextInput
       style={styles.input}
       placeholder="numbers of containers/vehicles"
       value={numContainers}
-      onChangeText={setNumContainers}
-      keyboardType="default"
+      onChangeText={(text) => {
+        // Allow only digits
+        const cleaned = text.replace(/[^0-9]/g, '');
+        setNumContainers(cleaned);
+      }}
+      keyboardType="numeric"
       placeholderTextColor="#94A3B8"
     />
   </View>
+
+  {/* Validation message */}
+  {numContainers !== '' && Number(numContainers) > 100 && (
+    <Text style={styles.errorText}>
+      You cannot enter more than 100 containers/vehicles.
+    </Text>
+  )}
 </View>
+
 {/* --- */}
 
 {/* Cargo Description */}
@@ -682,4 +694,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
   },
+
+  errorText: {
+  color: '#DC2626', // red color
+  fontSize: 13,
+  marginTop: 6,
+  marginLeft: 4,
+},
 });

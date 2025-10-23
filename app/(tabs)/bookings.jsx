@@ -1,3 +1,4 @@
+// changes start ---
 import { 
   View, 
   Text, 
@@ -15,6 +16,7 @@ import {
   ChevronRight,
   Package,
   WeightIcon,
+  RefreshCcw,
 } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 import { useState, useEffect, useCallback } from 'react';
@@ -75,6 +77,15 @@ export default function BookingStatusScreen() {
         <Text style={styles.title}>My Bookings</Text>
         <Text style={styles.subtitle}>Track all your booking requests</Text>
       </View>
+
+      {/* ✅ Refresh Button */}
+      <View style={styles.refreshRow}>
+        <TouchableOpacity style={styles.refreshButton} onPress={onRefresh}>
+          <RefreshCcw size={16} color="#fff" />
+          <Text style={styles.refreshButtonText}>Refresh</Text>
+        </TouchableOpacity>
+      </View>
+
 
       <ScrollView 
         style={styles.bookingsList}
@@ -333,4 +344,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#94A3B8',
   },
+
+
+  // Refresh button style
+  refreshRow: {
+  flexDirection: 'row',
+  justifyContent: 'flex-end', // align button to right side
+  alignItems: 'center',
+  paddingHorizontal: 24,
+  marginBottom: 16,
+},
+
+refreshButton: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#ed8411',
+  paddingVertical: 6,
+  paddingHorizontal: 9,
+  borderRadius: 8,
+  gap: 6,
+},
+
+refreshButtonText: {
+  color: '#FFFFFF',
+  fontSize: 13,
+  fontWeight: '600',
+},
+
 });
