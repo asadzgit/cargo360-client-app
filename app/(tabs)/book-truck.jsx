@@ -132,6 +132,9 @@ export default function BookTruckScreen() {
         toLocation,
         description,
         cargoWeight,
+        insurance,
+        salesTax,
+        numberOfVehicles: numContainers
       });
 
       Alert.alert(
