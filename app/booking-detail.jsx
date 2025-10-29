@@ -97,6 +97,9 @@ export default function BookingDetailScreen() {
             cargoWeight: data?.cargoWeight,
             cargoSize: data?.cargoSize,
             budget: data?.budget,
+            insurance: data?.insurance || false,
+            salesTax: data?.salesTax || false,
+
           };
           setBooking(normalized);
         } catch (e) {
@@ -144,6 +147,9 @@ export default function BookingDetailScreen() {
         cargoWeight: data?.cargoWeight,
         cargoSize: data?.cargoSize,
         budget: data?.budget,
+        insurance: data?.insurance || false,
+        salesTax: data?.salesTax || false,
+
       };
       setBooking(normalized);
       setError(null);
@@ -403,6 +409,22 @@ const openMaps = () => {
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Cargo Weight (kg)</Text>
               <Text style={styles.detailValue}>{booking.cargoWeight || 'N/A'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.detailRow}>
+            <ContainerIcon size={20} color="aqua" />   
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Insurance:</Text>
+              <Text style={styles.detailValue}>{booking?.insurance ? 'Yes' : 'No'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.detailRow}>
+            <ContainerIcon size={20} color="aqua" />  
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Sales Tax Invoice:</Text>
+              <Text style={styles.detailValue}>{booking?.salesTax ? 'Yes' : 'No'}</Text>
             </View>
           </View>
 
