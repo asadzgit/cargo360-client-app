@@ -14,8 +14,8 @@ export default function SignupScreen() {
   const { signup } = useBooking();
 
   const handleSignup = async () => {
-    if (!name || !email || !password) {
-      Alert.alert('Error', 'Please fill in name, email and password fields');
+    if (!name || !email || !password || !phone) {
+      Alert.alert('Error', 'Please fill in all the fields');
       return;
     }
 
@@ -79,7 +79,7 @@ export default function SignupScreen() {
           <Phone size={20} color="#64748B" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
-            placeholder="Phone number (optional)"
+            placeholder="Phone number"
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
