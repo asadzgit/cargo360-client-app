@@ -70,6 +70,8 @@ export default function BookingDetailScreen() {
       status: bookingFromContext.status || 'Pending',
       description: bookingFromContext.description,
       cargoWeight: bookingFromContext.cargoWeight,
+      insurance: bookingFromContext.insurance,
+      salesTax: bookingFromContext.salesTax,
       cargoSize: bookingFromContext.cargoSize,
       budget: bookingFromContext.budget,
     };
@@ -101,6 +103,7 @@ export default function BookingDetailScreen() {
             salesTax: data?.salesTax || false,
 
           };
+          console.log(normalized);
           setBooking(normalized);
         } catch (e) {
           if (!mounted) return;
@@ -122,6 +125,8 @@ export default function BookingDetailScreen() {
         vehicleType: booking.vehicleType || '',
         description: booking.description || '',
         cargoWeight: booking.cargoWeight ? String(booking.cargoWeight) : '',
+        salesTax: booking.salesTax || 'No',
+        insurance: booking.insurance || 'No',
         cargoSize: booking.cargoSize || '',
         budget: booking.budget ? String(booking.budget) : '',
       });
@@ -151,6 +156,8 @@ export default function BookingDetailScreen() {
         salesTax: data?.salesTax || false,
 
       };
+      console.log(normalized);
+      
       setBooking(normalized);
       setError(null);
       // Also refresh bookings list in context if available (keeps counts consistent)

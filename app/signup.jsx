@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Truck, Mail, Lock, User, Phone } from 'lucide-react-native';
+import { Truck, Mail, Lock, User, Phone,Building2 } from 'lucide-react-native';
 import { useBooking } from '../context/BookingContext';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [company, setCompany] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,8 +15,8 @@ export default function SignupScreen() {
   const { signup } = useBooking();
 
   const handleSignup = async () => {
-    if (!name || !email || !password) {
-      Alert.alert('Error', 'Please fill in name, email and password fields');
+    if (!name || !email || !password || !phone || !company) {
+      Alert.alert('Error', 'Please fill in all the fields');
       return;
     }
 
@@ -27,7 +28,7 @@ export default function SignupScreen() {
     setLoading(true);
     
     try {
-      const payload = { name, email, password };
+      const payload = { name, email,company,password };
       if (phone) payload.phone = phone;
       const response = await signup(payload);
       if (response?.error) {
@@ -75,11 +76,23 @@ export default function SignupScreen() {
           />
         </View>
 
+        {/* 🟢 New Company Name Field (added below email) */}
+        <View style={styles.inputContainer}>
+          <Building2 size={20} color="#64748B" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Company name"
+            value={company}
+            onChangeText={setCompany}
+            placeholderTextColor="#94A3B8"
+          />
+        </View>
+
         <View style={styles.inputContainer}>
           <Phone size={20} color="#64748B" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
-            placeholder="Phone number (optional)"
+            placeholder="Phone number"
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
