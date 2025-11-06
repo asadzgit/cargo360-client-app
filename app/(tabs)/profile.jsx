@@ -24,6 +24,9 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState(user || null);
   const [loading, setLoading] = useState(false);
 
+  const [formCompany, setFormCompany] = useState(''); // ✅ kept but no updates
+
+
   // Inline edit state
   const [editing, setEditing] = useState(false);
   const [formName, setFormName] = useState('');
@@ -52,6 +55,7 @@ export default function ProfileScreen() {
           setProfile(u);
           setFormName(u?.name || '');
           setFormPhone(u?.phone || '');
+          setFormCompany(u?.company || ''); // ✅ keep but not editable
         }
       } catch (e) {
         // If unauthorized, route to login
@@ -59,6 +63,7 @@ export default function ProfileScreen() {
           setProfile(MOCK_PROFILE);
           setFormName(MOCK_PROFILE.name);
           setFormPhone(MOCK_PROFILE.phone);
+          setFormCompany(MOCK_PROFILE.company);
         } else {
           router.replace('/login');
         }
@@ -73,6 +78,7 @@ export default function ProfileScreen() {
     if (user && !profile) {
       setFormName(user?.name || '');
       setFormPhone(user?.phone || '');
+      setFormCompany(user?.company || '');
     }
   }, [user]);
 
@@ -86,6 +92,7 @@ export default function ProfileScreen() {
     if (!editing) {
       setFormName(profile?.name || user?.name || '');
       setFormPhone(profile?.phone || user?.phone || '');
+      setFormCompany(profile?.company || '');
     }
     setEditing((v) => !v);
   };
@@ -95,8 +102,12 @@ export default function ProfileScreen() {
     const payload = {};
     if (formName && formName !== (profile?.name || user?.name || '')) payload.name = formName.trim();
     if (formPhone !== (profile?.phone || user?.phone || '')) payload.phone = formPhone?.trim() || '';
-  
-    if (!payload.name && payload.phone === undefined) {
+
+    // ❌ NO company update (company is not editable)
+    // if (formCompany && formCompany !== profile?.company) payload.company = formCompany.trim();
+
+    // ✅ FIXED VALIDATION
+    if (Object.keys(payload).length === 0) {  // ✅ CHANGE
       setUpdateError('No changes to update.');
       return;
     }
@@ -236,6 +247,17 @@ export default function ProfileScreen() {
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Email</Text>
                 <Text style={styles.infoValue}>{profile?.email || user?.email || '—'}</Text>
+              </View>
+            </View>
+
+            {/* ✅ COMPANY — READ-ONLY */}
+            <View style={styles.infoRow}>
+              <Contact size={20} color="#64748B" />
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Company</Text>
+                <Text style={[styles.infoValue]}>
+                  {profile?.company || '—'}
+                </Text>
               </View>
             </View>
             
