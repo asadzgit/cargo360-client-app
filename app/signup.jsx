@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Truck, Mail, Lock, User, Phone,Building2 } from 'lucide-react-native';
+import { Truck, Mail, Lock, User, Phone,Building2, Eye, EyeOff} from 'lucide-react-native';
 import { useBooking } from '../context/BookingContext';
 
 export default function SignupScreen() {
@@ -13,6 +13,7 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { signup } = useBooking();
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSignup = async () => {
     if (!name || !email || !password || !phone || !company) {
@@ -101,16 +102,26 @@ export default function SignupScreen() {
         </View>
 
         <View style={styles.inputContainer}>
-          <Lock size={20} color="#64748B" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Password (min 6 characters)"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            placeholderTextColor="#94A3B8"
-          />
-        </View>
+  <Lock size={20} color="#64748B" style={styles.inputIcon} />
+
+  <TextInput
+    style={styles.input}
+    placeholder="Password (min 6 characters)"
+    value={password}
+    onChangeText={setPassword}
+    secureTextEntry={!showPassword}      // ✅ Toggle password visibility
+    placeholderTextColor="#94A3B8"
+  />
+
+  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+    {showPassword ? (
+      <EyeOff size={20} color="#64748B" />
+    ) : (
+      <Eye size={20} color="#64748B" />
+    )}
+  </TouchableOpacity>
+</View>
+
 
         <TouchableOpacity 
           style={[styles.button, loading && styles.buttonDisabled]} 
