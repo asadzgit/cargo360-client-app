@@ -10,7 +10,7 @@ import {
   Alert 
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Truck, Package, MapPin, ArrowRight,Box } from 'lucide-react-native';
+import { Truck, Package, MapPin, ArrowRight, Box } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 
 const vehicleTypes = [
@@ -45,10 +45,9 @@ export default function BookTruckScreen() {
 
   const [pickupDate, setPickupDate] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
+  const [pickupDateDisplay, setPickupDateDisplay] = useState('');
+  const [deliveryDateDisplay, setDeliveryDateDisplay] = useState('');
 
-
-
-  
   const [pickupOptions, setPickupOptions] = useState([]);
   const [dropOptions, setDropOptions] = useState([]);
   const [pickupLoading, setPickupLoading] = useState(false);
@@ -58,6 +57,139 @@ export default function BookTruckScreen() {
 
   const router = useRouter();
   const { addBooking } = useBooking();
+
+  // DATE HANDLERS & VALIDATORS
+  useEffect(() => {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, "0");
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const yyyy = today.getFullYear();
+    const formatted = `${dd}/${mm}/${yyyy}`;
+
+    // Show formatted date in display
+    setPickupDateDisplay(formatted);
+
+    // Save in ISO format for backend
+    const iso = `${yyyy}-${mm}-${dd}`;
+    setPickupDate(iso);
+  }, []);
+
+  // Format user input (DD/MM/YYYY) and limit to valid day/month
+  const formatDateInput = (value) => {
+    // Remove everything except numbers and slashes
+    const digits = value.replace(/[^\d/]/g, "");
+    
+    // If user is deleting, return the cleaned value
+    if (digits.length < value.length) {
+      return digits;
+    }
+
+    // Extract numbers only for processing
+    const numbers = digits.replace(/\D/g, "");
+    
+    // Don't auto-complete if user is still typing the first digit
+    if (numbers.length === 1) {
+      return numbers;
+    }
+    
+    const limited = numbers.slice(0, 8);
+    
+    let day = limited.slice(0, 2);
+    let month = limited.slice(2, 4);
+    let year = limited.slice(4, 8);
+
+    // ✅ Day limit
+    if (day.length === 2 && parseInt(day) > 31) day = "31";
+    if (day.length === 2 && parseInt(day) < 1) day = "01";
+
+    // ✅ Month limit
+    if (month.length === 2 && parseInt(month) > 12) month = "12";
+    if (month.length === 2 && parseInt(month) < 1) month = "01";
+
+    // ✅ Year validation
+    const currentYear = new Date().getFullYear();
+    const minYear = currentYear;
+    const maxYear = currentYear + 2;
+
+    if (year && year.length === 4) {
+      const parsedYear = parseInt(year);
+      
+      if (parsedYear < minYear || parsedYear > maxYear) {
+        year = String(currentYear);
+      }
+    }
+
+    // ✅ Build formatted string
+    let formatted = day;
+    
+    if (day.length === 2) {
+      formatted += "/";
+      
+      if (month) {
+        formatted += month;
+      }
+      
+      if (month.length === 2) {
+        formatted += "/";
+        
+        if (year) {
+          formatted += year;
+        }
+      }
+    }
+
+    return formatted;
+  };
+
+  const validateAndConvertDate = (formatted, setDateFunction) => {
+    const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(formatted);
+    if (match) {
+      const [, day, month, year] = match;
+      const d = parseInt(day, 10);
+      const m = parseInt(month, 10);
+      const y = parseInt(year, 10);
+
+      if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+        const iso = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        setDateFunction(iso);
+        return;
+      }
+    }
+    setDateFunction("");
+  };
+
+  const convertFormattedToISO = (formatted) => {
+    const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(formatted);
+    if (!match) return null;
+
+    const [, day, month, year] = match;
+    return `${year}-${month}-${day}`;
+  };
+
+  const handlePickupDateChange = (text) => {
+    const formatted = formatDateInput(text);
+    setPickupDateDisplay(formatted);
+    validateAndConvertDate(formatted, setPickupDate);
+  };
+
+  const handleDeliveryDateChange = (text) => {
+    const formatted = formatDateInput(text);
+    setDeliveryDateDisplay(formatted);
+
+    // Convert to ISO (or empty)
+    validateAndConvertDate(formatted, setDeliveryDate);
+
+    // Live validation: delivery must not be less than pickup
+    const deliveryISO = convertFormattedToISO(formatted);
+    if (deliveryISO && pickupDate) {
+      const pDate = new Date(pickupDate);
+      const dDate = new Date(deliveryISO);
+
+      if (dDate < pDate) {
+        Alert.alert("Validation Error", "Delivery date cannot be before pickup date");
+      }
+    }
+  };
 
   // Debounced fetch for Nominatim (OpenStreetMap)
   const fetchLocations = async (query, setOpts, setLoad) => {
@@ -114,7 +246,20 @@ export default function BookTruckScreen() {
   const handleSubmit = async () => {
     const finalVehicleType = vehicleType === 'Other (please specify)' ? customVehicleType.trim() : vehicleType;
 
-    if (!finalVehicleType || !loadType || !numContainers || !fromLocation || !toLocation || !cargoWeight || !pickupDate || !deliveryDate) {
+    // Date validation
+    if (!pickupDate || !deliveryDate) {
+      Alert.alert('Error', 'Please fill in both pickup and delivery dates');
+      return;
+    }
+
+    const pDate = new Date(pickupDate);
+    const dDate = new Date(deliveryDate);
+    if (dDate < pDate) {
+      Alert.alert('Error', 'Delivery date cannot be before pickup date');
+      return;
+    }
+
+    if (!finalVehicleType || !loadType || !numContainers || !fromLocation || !toLocation || !cargoWeight) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -142,11 +287,11 @@ export default function BookTruckScreen() {
         salesTax: !!salesTax, 
       });
       console.log('Submitting:', {
-  insurance,
-  salesTax,
-  typeofInsurance: typeof insurance,
-  typeofSalesTax: typeof salesTax
-});
+        insurance,
+        salesTax,
+        typeofInsurance: typeof insurance,
+        typeofSalesTax: typeof salesTax
+      });
 
       Alert.alert(
         'Booking Confirmed!', 
@@ -164,6 +309,8 @@ export default function BookTruckScreen() {
               setPickupOptions([]);
               setDropOptions([]);
               setCargoWeight('');
+              setDeliveryDate('');
+              setDeliveryDateDisplay('');
               // Navigate to home
               router.push('/(tabs)');
             }
@@ -177,44 +324,9 @@ export default function BookTruckScreen() {
     }
   };
 
-  const formatDateInput = (value) => {
-  // Remove all non-number characters
-  const cleaned = value.replace(/\D/g, '');
-  
-  let day = cleaned.slice(0, 2);
-  let month = cleaned.slice(2, 4);
-  let year = cleaned.slice(4, 8);
-
-  let formatted = day;
-
-  if (month.length) {
-    formatted += '/' + month;
-  } else if (day.length === 2 && cleaned.length > 2) {
-    formatted += '/';
-  }
-
-  if (year.length) {
-    formatted += '/' + year;
-  } else if (month.length === 2 && cleaned.length > 4) {
-    formatted += '/';
-  }
-
-  return formatted;
-};
-
-useEffect(() => {
-  const today = new Date();
-  const d = String(today.getDate()).padStart(2, '0');
-  const m = String(today.getMonth() + 1).padStart(2, '0');
-  const y = today.getFullYear();
-  setPickupDate(`${d}/${m}/${y}`);
-}, []);
-
   return (
     <ScrollView
       style={styles.container}
-      // stickyHeaderIndices={[0]}
-      // contentContainerStyle={{ paddingBottom: 24 }}
       showsVerticalScrollIndicator={false}
     >
       <View style={{
@@ -226,7 +338,6 @@ useEffect(() => {
         backgroundColor: '#024d9a',
         borderBottomLeftRadius: 60,
         borderBottomRightRadius: 60,
-        // sticky visual overlay
         zIndex: 100,
         height: 180,
         elevation: 4,
@@ -242,34 +353,35 @@ useEffect(() => {
 
       <View style={styles.form}>
         {/* Pickup Date */}
-<View style={styles.section}>
-  <Text style={styles.label}>Pickup Date *</Text>
-  <View style={styles.inputContainer}>
-    <TextInput
-  style={styles.input}
-  value={pickupDate}
-  onChangeText={(text) => setPickupDate(formatDateInput(text))}
-  keyboardType="numeric"
-  placeholder="DD/MM/YYYY"
-  placeholderTextColor="#94A3B8"
-/>
-  </View>
-</View>
+        <View style={styles.section}>
+          <Text style={styles.label}>Pickup Date *</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              value={pickupDateDisplay}
+              onChangeText={handlePickupDateChange}
+              keyboardType="numeric"
+              placeholder="DD/MM/YYYY"
+              placeholderTextColor="#94A3B8"
+              editable={false} // Pickup date is auto-set to today
+            />
+          </View>
+        </View>
 
-{/* Delivery Date */}
-<View style={styles.section}>
-  <Text style={styles.label}>Delivery Date *</Text>
-  <View style={styles.inputContainer}>
-    <TextInput
-  style={styles.input}
-  value={deliveryDate}
-  onChangeText={(text) => setDeliveryDate(formatDateInput(text))}
-  keyboardType="numeric"
-  placeholder="DD/MM/YYYY"
-  placeholderTextColor="#94A3B8"
-/>
-  </View>
-</View>
+        {/* Delivery Date */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Delivery Date *</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              value={deliveryDateDisplay}
+              onChangeText={handleDeliveryDateChange}
+              keyboardType="numeric"
+              placeholder="DD/MM/YYYY"
+              placeholderTextColor="#94A3B8"
+            />
+          </View>
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.label}>Vehicle Type *</Text>
@@ -332,21 +444,20 @@ useEffect(() => {
         </View> */}
 
         {/* Cargo Type Input Field */}
-<View style={styles.section}>
-  <Text style={styles.label}>Cargo Type *</Text>
-  <View style={styles.inputContainer}>
-    <Package size={20} color="#64748B" style={styles.inputIcon} />
-    <TextInput
-      style={styles.input}
-      placeholder="e.g.Electronics, Furniture, Food"
-      value={loadType}
-      onChangeText={setLoadType}
-      placeholderTextColor="#94A3B8"
-      keyboardType="default"
-    />
-  </View>
-</View>
-
+        <View style={styles.section}>
+          <Text style={styles.label}>Cargo Type *</Text>
+          <View style={styles.inputContainer}>
+            <Package size={20} color="#64748B" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="e.g.Electronics, Furniture, Food"
+              value={loadType}
+              onChangeText={setLoadType}
+              placeholderTextColor="#94A3B8"
+              keyboardType="default"
+            />
+          </View>
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.label}>
@@ -370,199 +481,189 @@ useEffect(() => {
         </View>
 
         {/* No. of Containers/Vehicles Field */}
-<View style={styles.section}>
-  <Text style={styles.label}>No. of Containers/Vehicles *</Text>
-  <View style={styles.inputContainer}>
-    <Truck size={20} color="#64748B" style={styles.inputIcon} />
-    <TextInput
-      style={styles.input}
-      placeholder="numbers of containers/vehicles"
-      value={numContainers}
-      onChangeText={(text) => {
-        // Allow only digits
-        const cleaned = text.replace(/[^0-9]/g, '');
-        setNumContainers(cleaned);
-      }}
-      keyboardType="numeric"
-      placeholderTextColor="#94A3B8"
-    />
-  </View>
-
-  {/* Validation message */}
-  {numContainers !== '' && Number(numContainers) > 100 && (
-    <Text style={styles.errorText}>
-      You cannot enter more than 100 containers/vehicles.
-    </Text>
-  )}
-</View>
-
-{/* --- */}
-
-{/* Cargo Description */}
-<View style={styles.section}>
-  <Text style={styles.label}>Cargo Description</Text>
-  <View style={styles.inputContainer}>
-    <Box size={20} color="#64748B" style={styles.inputIcon} />
-    <TextInput
-      style={[styles.input, styles.textArea]}
-      placeholder="Describe your cargo in detail (e.g., fragile electronics, heavy machinery, perishable goods)"
-      value={description}
-      onChangeText={setDescription}
-      multiline
-      numberOfLines={4}
-      textAlignVertical="top"
-      placeholderTextColor="#94A3B8"
-    />
-  </View>
-</View>
-
-
-          {/* new from location inputs */}
-          <View style={[styles.section, { zIndex: 200, elevation: 3 }]}>
-            <Text style={styles.label}>Pickup  Location *</Text>
-            {/* {__DEV__ && (
-  <Text style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>
-    {pickupLoading ? 'Searching...' : `Results: ${pickupOptions?.length}`}
-  </Text>
-)} */}
-            <View style={{ position: 'relative' }}>
-              <View style={styles.inputContainer}>
-                <MapPin size={20} color="#64748B" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Search for pickup location..."
-                  value={fromLocation}
-                  onChangeText={handlePickupChange}
-                  placeholderTextColor="#94A3B8"
-                />
-              </View>
-
-              {(pickupLoading || pickupOptions.length > 0) && (
-                <View style={styles.dropdown}>
-                  {pickupLoading ? (
-                    <Text style={styles.dropdownHint}>Searching locations...</Text>
-                  ) : (
-                    <ScrollView style={styles.dropdownScroll} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
-                      {pickupOptions.map((opt) => (
-                        <TouchableOpacity
-                          key={opt.id}
-                          style={styles.dropdownItem}
-                          onPress={() => {
-                            setFromLocation(opt.value);
-                            setPickupOptions([]);
-                          }}
-                        >
-                          <Text style={styles.dropdownText}>{opt.label}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  )}
-                  {!pickupLoading && pickupOptions.length === 0
-                    && fromLocation.trim().length > 0 && fromLocation.trim().length < 3 && (
-                    <Text style={styles.dropdownHint}>Type at least 3 characters to search...</Text>
-                  )}
-                </View>
-              )}
-            </View>
+        <View style={styles.section}>
+          <Text style={styles.label}>No. of Containers/Vehicles *</Text>
+          <View style={styles.inputContainer}>
+            <Truck size={20} color="#64748B" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="numbers of containers/vehicles"
+              value={numContainers}
+              onChangeText={(text) => {
+                 // Allow only digits
+                const cleaned = text.replace(/[^0-9]/g, '');
+                setNumContainers(cleaned);
+              }}
+              keyboardType="numeric"
+              placeholderTextColor="#94A3B8"
+            />
           </View>
 
-          {/* new TO location inputs */}
-          <View style={[styles.section, { zIndex: 100, elevation: 2 }]}>
-            <Text style={styles.label}>Drop off Location *</Text>
-            <View style={{ position: 'relative' }}>
-              <View style={styles.inputContainer}>
-                <MapPin size={20} color="#64748B" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Search for delivery location..."
-                  value={toLocation}
-                  onChangeText={handleDropChange}
-                  placeholderTextColor="#94A3B8"
-                />
-              </View>
+          {/* Validation message */}
+          {numContainers !== '' && Number(numContainers) > 100 && (
+            <Text style={styles.errorText}>
+              You cannot enter more than 100 containers/vehicles.
+            </Text>
+          )}
+        </View>
 
-              {(dropLoading || dropOptions.length > 0) && (
-                <View style={styles.dropdown}>
-                  {dropLoading ? (
-                    <Text style={styles.dropdownHint}>Searching locations...</Text>
-                  ) : (
-                    <ScrollView style={styles.dropdownScroll} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
-                      {dropOptions.map((opt) => (
-                        <TouchableOpacity
-                          key={opt.id}
-                          style={styles.dropdownItem}
-                          onPress={() => {
-                            setToLocation(opt.value);
-                            setDropOptions([]);
-                          }}
-                        >
-                          <Text style={styles.dropdownText}>{opt.label}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  )}
-                  {!dropLoading && dropOptions.length === 0
-                    && toLocation.trim().length > 0 && toLocation.trim().length < 3 && (
-                    <Text style={styles.dropdownHint}>Type at least 3 characters to search...</Text>
-                  )}
-                </View>
-              )}
-            </View>
+        {/* Cargo Description */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Cargo Description</Text>
+          <View style={styles.inputContainer}>
+            <Box size={20} color="#64748B" style={styles.inputIcon} />
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Describe your cargo in detail (e.g., fragile electronics, heavy machinery, perishable goods)"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              placeholderTextColor="#94A3B8"
+            />
           </View>
+        </View>
+
+        {/* Location inputs */}
+        <View style={[styles.section, { zIndex: 200, elevation: 3 }]}>
+          <Text style={styles.label}>Pickup Location *</Text>
+          <View style={{ position: 'relative' }}>
+            <View style={styles.inputContainer}>
+              <MapPin size={20} color="#64748B" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Search for pickup location..."
+                value={fromLocation}
+                onChangeText={handlePickupChange}
+                placeholderTextColor="#94A3B8"
+              />
+            </View>
+
+            {(pickupLoading || pickupOptions.length > 0) && (
+              <View style={styles.dropdown}>
+                {pickupLoading ? (
+                  <Text style={styles.dropdownHint}>Searching locations...</Text>
+                ) : (
+                  <ScrollView style={styles.dropdownScroll} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+                    {pickupOptions.map((opt) => (
+                      <TouchableOpacity
+                        key={opt.id}
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                          setFromLocation(opt.value);
+                          setPickupOptions([]);
+                        }}
+                      >
+                        <Text style={styles.dropdownText}>{opt.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+                {!pickupLoading && pickupOptions.length === 0
+                  && fromLocation.trim().length > 0 && fromLocation.trim().length < 3 && (
+                  <Text style={styles.dropdownHint}>Type at least 3 characters to search...</Text>
+                )}
+              </View>
+            )}
+          </View>
+        </View>
+
+        <View style={[styles.section, { zIndex: 100, elevation: 2 }]}>
+          <Text style={styles.label}>Drop off Location *</Text>
+          <View style={{ position: 'relative' }}>
+            <View style={styles.inputContainer}>
+              <MapPin size={20} color="#64748B" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Search for delivery location..."
+                value={toLocation}
+                onChangeText={handleDropChange}
+                placeholderTextColor="#94A3B8"
+              />
+            </View>
+
+            {(dropLoading || dropOptions.length > 0) && (
+              <View style={styles.dropdown}>
+                {dropLoading ? (
+                  <Text style={styles.dropdownHint}>Searching locations...</Text>
+                ) : (
+                  <ScrollView style={styles.dropdownScroll} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+                    {dropOptions.map((opt) => (
+                      <TouchableOpacity
+                        key={opt.id}
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                          setToLocation(opt.value);
+                          setDropOptions([]);
+                        }}
+                      >
+                        <Text style={styles.dropdownText}>{opt.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+                {!dropLoading && dropOptions.length === 0
+                  && toLocation.trim().length > 0 && toLocation.trim().length < 3 && (
+                  <Text style={styles.dropdownHint}>Type at least 3 characters to search...</Text>
+                )}
+              </View>
+            )}
+          </View>
+        </View>
 
         {/* Additional Options (Insurance & Sales Tax) */}
-<View style={styles.section}>
-  <Text style={styles.label}>Additional Options</Text>
+        <View style={styles.section}>
+          <Text style={styles.label}>Additional Options</Text>
 
-  {/* Insurance Option */}
-  <Pressable
-    onPress={() => setInsurance(!insurance)}
-    style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}
-  >
-    <View
-      style={{
-        width: 22,
-        height: 22,
-        borderWidth: 2,
-        borderColor: '#64748B',
-        borderRadius: 4,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: insurance ? '#2563EB' : 'transparent',
-      }}
-    >
-      {insurance && <Text style={{ color: 'white', fontWeight: 'bold' }}>✓</Text>}
-    </View>
-    <Text style={{ marginLeft: 8, color: '#334155', fontSize: 15 }}>
-      Insurance
-    </Text>
-  </Pressable>
+          {/* Insurance Option */}
+          <Pressable
+            onPress={() => setInsurance(!insurance)}
+            style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}
+          >
+            <View
+              style={{
+                width: 22,
+                height: 22,
+                borderWidth: 2,
+                borderColor: '#64748B',
+                borderRadius: 4,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: insurance ? '#2563EB' : 'transparent',
+              }}
+            >
+              {insurance && <Text style={{ color: 'white', fontWeight: 'bold' }}>✓</Text>}
+            </View>
+            <Text style={{ marginLeft: 8, color: '#334155', fontSize: 15 }}>
+              Insurance
+            </Text>
+          </Pressable>
 
-  {/* Sales Tax Option */}
-  <Pressable
-    onPress={() => setSalesTax(!salesTax)}
-    style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}
-  >
-    <View
-      style={{
-        width: 22,
-        height: 22,
-        borderWidth: 2,
-        borderColor: '#64748B',
-        borderRadius: 4,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: salesTax ? '#2563EB' : 'transparent',
-      }}
-    >
-      {salesTax && <Text style={{ color: 'white', fontWeight: 'bold' }}>✓</Text>}
-    </View>
-    <Text style={{ marginLeft: 8, color: '#334155', fontSize: 15 }}>
-      Sales Tax Invoice
-    </Text>
-  </Pressable>
-</View>
-
+          {/* Sales Tax Option */}
+          <Pressable
+            onPress={() => setSalesTax(!salesTax)}
+            style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}
+          >
+            <View
+              style={{
+                width: 22,
+                height: 22,
+                borderWidth: 2,
+                borderColor: '#64748B',
+                borderRadius: 4,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: salesTax ? '#2563EB' : 'transparent',
+              }}
+            >
+              {salesTax && <Text style={{ color: 'white', fontWeight: 'bold' }}>✓</Text>}
+            </View>
+            <Text style={{ marginLeft: 8, color: '#334155', fontSize: 15 }}>
+              Sales Tax Invoice
+            </Text>
+          </Pressable>
+        </View>
 
         <View style={styles.routePreview}>
           <View style={styles.routeInfo}>
@@ -597,15 +698,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  header: {
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-    backgroundColor: '#024d9a',
-    textAlign: 'center',
-    // borderRadius: '0px 0px 60px 60px',
-  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -623,6 +715,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 100,
     marginTop: 10,
+    overflow: 'visible',
   },
   section: {
     marginBottom: 24,
@@ -750,12 +843,6 @@ const styles = StyleSheet.create({
   dropdownScroll: {
     maxHeight: 220,
   },
-  form: {
-    paddingHorizontal: 24,
-    paddingBottom: 100,
-    marginTop: 10,
-    overflow: 'visible',
-  },
   dropdownItem: {
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -771,11 +858,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
   },
-
   errorText: {
-  color: '#DC2626', // red color
-  fontSize: 13,
-  marginTop: 6,
-  marginLeft: 4,
-},
+    color: '#DC2626',
+    fontSize: 13,
+    marginTop: 6,
+    marginLeft: 4,
+  },
 });
