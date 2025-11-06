@@ -48,10 +48,10 @@ export function BookingProvider({ children }) {
     }
   }
 
-  async function signup({ name, email, phone, password }) {
+  async function signup({ name, email, company, phone, password }) {
     try {
       setLoading(true);
-      const { data } = await authAPI.signup({ name, email, phone, password });
+      const { data } = await authAPI.signup({ name, email, company, phone, password });
       if (data?.message) {
         Alert.alert('Success', data.message);
         router.replace('/login');
