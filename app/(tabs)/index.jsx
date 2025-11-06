@@ -1,16 +1,20 @@
 // // changes start from here---
-import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, RefreshControl, Modal} from 'react-native';
 import { useRouter } from 'expo-router';
-import { Truck, ClipboardList, User, MapPin, RefreshCw } from 'lucide-react-native';
+import { Truck, ClipboardList, User, MapPin, RefreshCw, Plus} from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 import { humanize } from '../../utils';
 import { useState, useCallback } from 'react';
+import ClearanceModal from '../ClearanceModal';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user, bookings, fetchBookings } = useBooking();
 
   const [refreshing, setRefreshing] = useState(false);
+  // 🔸 Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const onRefresh = useCallback(async () => {
   try {
     setRefreshing(true);
@@ -66,22 +70,37 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.actionsContainer}>
-          <TouchableOpacity 
-            style={styles.primaryAction}
-            onPress={() => router.push('/(tabs)/book-truck')}
-          >
-            <Truck size={24} color="#FFFFFF" />
-            <Text style={styles.primaryActionText}>Book a Vehicle</Text>
-          </TouchableOpacity>
+  <TouchableOpacity 
+    style={styles.primaryAction}
+    onPress={() => router.push('/(tabs)/book-truck')}
+  >
+    <Truck size={24} color="#FFFFFF" />
+    <Text style={styles.primaryActionText}>Book a Vehicle</Text>
+  </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.secondaryAction}
-            onPress={() => router.push('/(tabs)/bookings')}
-          >
-            <ClipboardList size={24} color="#2563EB" />
-            <Text style={styles.secondaryActionText}>View My Bookings</Text>
-          </TouchableOpacity>
-        </View>
+  {/* New Row with two half buttons */}
+  <View style={styles.halfRow}>
+    <TouchableOpacity 
+      style={styles.halfButtonLeft}
+      onPress={() => setIsModalOpen(true)}
+    >
+      <Plus size={20} color="#2563EB" />
+      <Text style={styles.halfButtonText}>Clearance Doc</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity 
+      style={styles.halfButtonRight}
+      onPress={() => router.push('/(tabs)/bookings')}
+    >
+      <ClipboardList size={20} color="#2563EB" />
+      <Text style={styles.halfButtonText}>My Bookings</Text>
+    </TouchableOpacity>
+  </View>
+
+  {/* Clearance Modal */}
+  <ClearanceModal visible={isModalOpen} onClose={() => setIsModalOpen(false)} />
+</View>
+
 
         <View style={styles.recentSection}>
           <View style={styles.recentHeader}>
@@ -97,6 +116,7 @@ export default function HomeScreen() {
       </Text>
     </TouchableOpacity>
   </View>
+
           {bookings.length === 0 ? (
             <View style={styles.emptyState}>
               <Truck size={48} color="#CBD5E1" />
@@ -363,6 +383,95 @@ refreshInlineText: {
   fontSize: 13,
   fontWeight: '600',
   marginLeft: 6,
+},
+
+// 🔸 Add these styles
+addDocButton: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: '#FFFFFF',
+  borderRadius: 8,
+  paddingVertical: 8,
+  paddingHorizontal: 12,
+  borderWidth: 1,
+  borderColor: '#E2E8F0',
+  alignSelf: 'flex-start',
+  marginTop: 8,
+},
+addDocText: {
+  color: '#000000',
+  fontSize: 14,
+  fontWeight: '600',
+  marginLeft: 6,
+},
+modalOverlay: {
+  flex: 1,
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+modalContent: {
+  width: '80%',
+  backgroundColor: '#FFFFFF',
+  borderRadius: 12,
+  padding: 20,
+  alignItems: 'center',
+},
+modalTitle: {
+  fontSize: 18,
+  fontWeight: '600',
+  marginBottom: 20,
+  color: '#1E293B',
+},
+modalCloseButton: {
+  backgroundColor: '#2563EB',
+  borderRadius: 8,
+  paddingVertical: 10,
+  paddingHorizontal: 20,
+},
+modalCloseText: {
+  color: '#FFFFFF',
+  fontWeight: '600',
+},
+
+halfRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  gap: 8,
+},
+
+halfButtonLeft: {
+  flex: 1,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: '#FFFFFF',
+  borderRadius: 12,
+  // padding: 16,
+  height: 60,
+  borderWidth: 1,
+  borderColor: '#E2E8F0',
+},
+
+halfButtonRight: {
+  flex: 1,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: '#FFFFFF',
+  borderRadius: 12,
+  // paddingLeft: 1,
+  borderWidth: 1,
+  height: 60,
+  borderColor: '#E2E8F0',
+},
+
+halfButtonText: {
+  color: '#2563EB',
+  fontSize: 15,
+  fontWeight: '600',
+  marginLeft: 2,
 },
 
 });

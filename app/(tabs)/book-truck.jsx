@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -42,6 +42,9 @@ export default function BookTruckScreen() {
   const [numContainers, setNumContainers] = useState('');
   const [insurance, setInsurance] = useState(false);
   const [salesTax, setSalesTax] = useState(false);
+
+  const [pickupDate, setPickupDate] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
 
 
 
@@ -111,7 +114,7 @@ export default function BookTruckScreen() {
   const handleSubmit = async () => {
     const finalVehicleType = vehicleType === 'Other (please specify)' ? customVehicleType.trim() : vehicleType;
 
-    if (!finalVehicleType || !loadType || !numContainers || !fromLocation || !toLocation || !cargoWeight) {
+    if (!finalVehicleType || !loadType || !numContainers || !fromLocation || !toLocation || !cargoWeight || !pickupDate || !deliveryDate) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -132,10 +135,18 @@ export default function BookTruckScreen() {
         toLocation,
         description,
         cargoWeight,
-        insurance,
-        salesTax,
-        numberOfVehicles: numContainers
+        numberOfVehicles: numContainers,
+        pickupDate,
+        deliveryDate,
+        insurance: !!insurance,   
+        salesTax: !!salesTax, 
       });
+      console.log('Submitting:', {
+  insurance,
+  salesTax,
+  typeofInsurance: typeof insurance,
+  typeofSalesTax: typeof salesTax
+});
 
       Alert.alert(
         'Booking Confirmed!', 
@@ -165,6 +176,39 @@ export default function BookTruckScreen() {
       setLoading(false);
     }
   };
+
+  const formatDateInput = (value) => {
+  // Remove all non-number characters
+  const cleaned = value.replace(/\D/g, '');
+  
+  let day = cleaned.slice(0, 2);
+  let month = cleaned.slice(2, 4);
+  let year = cleaned.slice(4, 8);
+
+  let formatted = day;
+
+  if (month.length) {
+    formatted += '/' + month;
+  } else if (day.length === 2 && cleaned.length > 2) {
+    formatted += '/';
+  }
+
+  if (year.length) {
+    formatted += '/' + year;
+  } else if (month.length === 2 && cleaned.length > 4) {
+    formatted += '/';
+  }
+
+  return formatted;
+};
+
+useEffect(() => {
+  const today = new Date();
+  const d = String(today.getDate()).padStart(2, '0');
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const y = today.getFullYear();
+  setPickupDate(`${d}/${m}/${y}`);
+}, []);
 
   return (
     <ScrollView
@@ -197,6 +241,36 @@ export default function BookTruckScreen() {
       </View>
 
       <View style={styles.form}>
+        {/* Pickup Date */}
+<View style={styles.section}>
+  <Text style={styles.label}>Pickup Date *</Text>
+  <View style={styles.inputContainer}>
+    <TextInput
+  style={styles.input}
+  value={pickupDate}
+  onChangeText={(text) => setPickupDate(formatDateInput(text))}
+  keyboardType="numeric"
+  placeholder="DD/MM/YYYY"
+  placeholderTextColor="#94A3B8"
+/>
+  </View>
+</View>
+
+{/* Delivery Date */}
+<View style={styles.section}>
+  <Text style={styles.label}>Delivery Date *</Text>
+  <View style={styles.inputContainer}>
+    <TextInput
+  style={styles.input}
+  value={deliveryDate}
+  onChangeText={(text) => setDeliveryDate(formatDateInput(text))}
+  keyboardType="numeric"
+  placeholder="DD/MM/YYYY"
+  placeholderTextColor="#94A3B8"
+/>
+  </View>
+</View>
+
         <View style={styles.section}>
           <Text style={styles.label}>Vehicle Type *</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionsContainer}>

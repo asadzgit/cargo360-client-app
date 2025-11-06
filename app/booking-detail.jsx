@@ -70,6 +70,8 @@ export default function BookingDetailScreen() {
       status: bookingFromContext.status || 'Pending',
       description: bookingFromContext.description,
       cargoWeight: bookingFromContext.cargoWeight,
+      insurance: bookingFromContext.insurance,
+      salesTax: bookingFromContext.salesTax,
       cargoSize: bookingFromContext.cargoSize,
       budget: bookingFromContext.budget,
     };
@@ -97,7 +99,11 @@ export default function BookingDetailScreen() {
             cargoWeight: data?.cargoWeight,
             cargoSize: data?.cargoSize,
             budget: data?.budget,
+            insurance: data?.insurance || false,
+            salesTax: data?.salesTax || false,
+
           };
+          console.log(normalized);
           setBooking(normalized);
         } catch (e) {
           if (!mounted) return;
@@ -119,6 +125,8 @@ export default function BookingDetailScreen() {
         vehicleType: booking.vehicleType || '',
         description: booking.description || '',
         cargoWeight: booking.cargoWeight ? String(booking.cargoWeight) : '',
+        salesTax: booking.salesTax || 'No',
+        insurance: booking.insurance || 'No',
         cargoSize: booking.cargoSize || '',
         budget: booking.budget ? String(booking.budget) : '',
       });
@@ -144,7 +152,12 @@ export default function BookingDetailScreen() {
         cargoWeight: data?.cargoWeight,
         cargoSize: data?.cargoSize,
         budget: data?.budget,
+        insurance: data?.insurance || false,
+        salesTax: data?.salesTax || false,
+
       };
+      console.log(normalized);
+      
       setBooking(normalized);
       setError(null);
       // Also refresh bookings list in context if available (keeps counts consistent)
@@ -403,6 +416,22 @@ const openMaps = () => {
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Cargo Weight (kg)</Text>
               <Text style={styles.detailValue}>{booking.cargoWeight || 'N/A'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.detailRow}>
+            <ContainerIcon size={20} color="aqua" />   
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Insurance:</Text>
+              <Text style={styles.detailValue}>{booking?.insurance ? 'Yes' : 'No'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.detailRow}>
+            <ContainerIcon size={20} color="aqua" />  
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Sales Tax Invoice:</Text>
+              <Text style={styles.detailValue}>{booking?.salesTax ? 'Yes' : 'No'}</Text>
             </View>
           </View>
 
