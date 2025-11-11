@@ -13,6 +13,19 @@ import { useRouter } from 'expo-router';
 import { Truck, Package, MapPin, ArrowRight, Box } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 
+/**
+ * Google Places Autocomplete Configuration
+ * 
+ * API Key: AIzaSyD3dYwbQlGyQlQWOOjY2u9RmyNYu-6rxWw
+ * - Enabled APIs: Places API (New), Maps SDK
+ * - Restrictions: Pakistan only (country:pk)
+ * - Type: geocode (addresses only)
+ * 
+ * Fallback: OpenStreetMap Nominatim
+ * - Used when Google Places fails or returns no results
+ * - Also restricted to Pakistan (countrycodes=pk)
+ */
+
 const vehicleTypes = [
   'Small Truck (1-2 Tons)',
   'Medium Truck (3-5 Tons)', 
@@ -198,19 +211,46 @@ export default function BookTruckScreen() {
       return;
     }
     setLoad(true);
+    
+    try {
+      // Try Google Places API first
+      const googleUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&types=geocode&components=country:pk&key=AIzaSyD3dYwbQlGyQlQWOOjY2u9RmyNYu-6rxWw`;
+      const googleResp = await fetch(googleUrl);
+      const googleData = await googleResp.json();
+      
+      if (googleData.status === 'OK' && googleData.predictions && googleData.predictions.length > 0) {
+        console.log("Google Places response:", googleData);
+        const opts = googleData.predictions.map((item) => ({
+          id: item.place_id,
+          label: item.description,
+          value: item.description,
+          placeId: item.place_id,
+        }));
+        setOpts(opts);
+        setLoad(false);
+        return;
+      }
+      
+      console.log("Google Places failed or no results, falling back to Nominatim");
+    } catch (googleError) {
+      console.log("Google Places error, falling back to Nominatim:", googleError);
+    }
+    
+    // Fallback to Nominatim if Google fails or returns no results
     try {
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=pk&limit=10&addressdetails=1`;
       const resp = await fetch(
         url, 
         { headers: 
-          { 'Accept-Language': 'en', 'User-Agent': 'Cargo360App/1.0 (contact: info@cargo360pk.com)',
+          { 'Accept-Language': 'en', 
+            'User-Agent': 'Cargo360App/1.0 (contact: info@cargo360pk.com)',
             'Referer': 'https://cargo360pk.com'
           }
         }
       );
-      console.log("nominatim respone:", resp)
+      console.log("Nominatim response:", resp);
       const data = await resp.json();
-      console.log("nominatim respone:", data)
+      console.log("Nominatim data:", data);
       const opts = (Array.isArray(data) ? data : []).map((item) => ({
         id: `${item.place_id}`,
         label: item.display_name,
@@ -221,7 +261,7 @@ export default function BookTruckScreen() {
       setOpts(opts);
     } catch (_e) {
       setOpts([]);
-      console.log("nominatim error:", _e)
+      console.log("Nominatim error:", _e);
     } finally {
       setLoad(false);
     }

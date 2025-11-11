@@ -29,13 +29,20 @@ export default function SignupScreen() {
     setLoading(true);
     
     try {
-      const payload = { name, email,company,password };
+      const payload = { name, email, company, password };
       if (phone) payload.phone = phone;
       const response = await signup(payload);
+      
       if (response?.error) {
         Alert.alert('Error', response.error);
+      } else if (response?.message) {
+        // Show success message and navigate to login
+        Alert.alert('Success', response.message, [
+          { text: 'OK', onPress: () => router.replace('/login') }
+        ]);
       } else {
-        router.replace('/(tabs)');
+        // Fallback: navigate to login
+        router.replace('/login');
       }
     } catch (error) {
       Alert.alert('Error', error?.message || 'Signup failed. Please try again.');

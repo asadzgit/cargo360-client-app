@@ -52,13 +52,7 @@ export function BookingProvider({ children }) {
     try {
       setLoading(true);
       const { data } = await authAPI.signup({ name, email, company, phone, password });
-      if (data?.message) {
-        Alert.alert('Success', data.message);
-        router.replace('/login');
-      } else {
-        Alert.alert('Error', 'Signup failed. Please try again.');
-      }
-      return true;
+      return data; // Return data so the component can handle UI (Alert/navigation)
     } catch (e) {
       throw e;
     } finally {
