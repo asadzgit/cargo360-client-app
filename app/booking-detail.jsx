@@ -70,7 +70,7 @@ export default function BookingDetailScreen() {
       status: bookingFromContext.status || 'Pending',
       description: bookingFromContext.description,
       cargoWeight: bookingFromContext.cargoWeight,
-      insurance: bookingFromContext.insurance,
+      // insurance: bookingFromContext.insurance,
       salesTax: bookingFromContext.salesTax,
       cargoSize: bookingFromContext.cargoSize,
       budget: bookingFromContext.budget,
@@ -99,7 +99,7 @@ export default function BookingDetailScreen() {
             cargoWeight: data?.cargoWeight,
             cargoSize: data?.cargoSize,
             budget: data?.budget,
-            insurance: data?.insurance || false,
+            // insurance: data?.insurance || false,
             salesTax: data?.salesTax || false,
 
           };
@@ -126,7 +126,7 @@ export default function BookingDetailScreen() {
         description: booking.description || '',
         cargoWeight: booking.cargoWeight ? String(booking.cargoWeight) : '',
         salesTax: booking.salesTax || 'No',
-        insurance: booking.insurance || 'No',
+        // insurance: booking.insurance || 'No',
         cargoSize: booking.cargoSize || '',
         budget: booking.budget ? String(booking.budget) : '',
       });
@@ -152,7 +152,7 @@ export default function BookingDetailScreen() {
         cargoWeight: data?.cargoWeight,
         cargoSize: data?.cargoSize,
         budget: data?.budget,
-        insurance: data?.insurance || false,
+        // insurance: data?.insurance || false,
         salesTax: data?.salesTax || false,
 
       };
@@ -419,13 +419,13 @@ const openMaps = () => {
             </View>
           </View>
 
-          <View style={styles.detailRow}>
+          {/* <View style={styles.detailRow}>
             <ContainerIcon size={20} color="aqua" />   
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>Insurance:</Text>
               <Text style={styles.detailValue}>{booking?.insurance ? 'Yes' : 'No'}</Text>
             </View>
-          </View>
+          </View> */}
 
           <View style={styles.detailRow}>
             <ContainerIcon size={20} color="aqua" />  

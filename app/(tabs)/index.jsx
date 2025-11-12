@@ -1,19 +1,28 @@
 // // changes start from here---
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, RefreshControl, Modal} from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Truck, ClipboardList, User, MapPin, RefreshCw, Plus} from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 import { humanize } from '../../utils';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import ClearanceModal from '../ClearanceModal';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user, bookings, fetchBookings } = useBooking();
+  const scrollViewRef = useRef(null);
 
   const [refreshing, setRefreshing] = useState(false);
   // 🔸 Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Scroll to top when screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+    }, [])
+  );
 
   const onRefresh = useCallback(async () => {
   try {
@@ -44,6 +53,7 @@ export default function HomeScreen() {
         </View>
       </View>
       <ScrollView
+  ref={scrollViewRef}
   style={{ marginBottom: 10 }}
   refreshControl={
     <RefreshControl

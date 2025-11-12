@@ -1,6 +1,7 @@
 import { Alert, View, Text, TouchableOpacity, StyleSheet, Linking, TextInput, Modal, ScrollView } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { User, Mail, Phone, MapPin, LogOut, Contact, Settings, CircleHelp as HelpCircle, Pencil, Lock, X } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 import { authAPI, userAPI } from '../../services/api';
@@ -23,6 +24,7 @@ export default function ProfileScreen() {
 
   const [profile, setProfile] = useState(user || null);
   const [loading, setLoading] = useState(false);
+  const scrollViewRef = useRef(null);
 
   const [formCompany, setFormCompany] = useState(''); // ✅ kept but no updates
 
@@ -42,6 +44,13 @@ export default function ProfileScreen() {
   const [pwdError, setPwdError] = useState('');
 
   const [delLoading, setDelLoading] = useState(false);
+
+  // Scroll to top when screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+    }, [])
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -176,6 +185,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <ScrollView
+        ref={scrollViewRef}
         stickyHeaderIndices={[0]}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

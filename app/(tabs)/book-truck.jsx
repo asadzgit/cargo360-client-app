@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -10,6 +10,7 @@ import {
   Alert 
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Truck, Package, MapPin, ArrowRight, Box } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 
@@ -67,9 +68,17 @@ export default function BookTruckScreen() {
   const [dropLoading, setDropLoading] = useState(false);
   const pickupDebounceRef = useRef(null);
   const dropDebounceRef = useRef(null);
+  const scrollViewRef = useRef(null);
 
   const router = useRouter();
   const { addBooking } = useBooking();
+
+  // Scroll to top when screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+    }, [])
+  );
 
   // DATE HANDLERS & VALIDATORS
   useEffect(() => {
@@ -366,6 +375,7 @@ export default function BookTruckScreen() {
 
   return (
     <ScrollView
+      ref={scrollViewRef}
       style={styles.container}
       showsVerticalScrollIndicator={false}
     >
@@ -656,30 +666,6 @@ export default function BookTruckScreen() {
         <View style={styles.section}>
           <Text style={styles.label}>Additional Options</Text>
 
-          {/* Insurance Option */}
-          <Pressable
-            onPress={() => setInsurance(!insurance)}
-            style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}
-          >
-            <View
-              style={{
-                width: 22,
-                height: 22,
-                borderWidth: 2,
-                borderColor: '#64748B',
-                borderRadius: 4,
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: insurance ? '#2563EB' : 'transparent',
-              }}
-            >
-              {insurance && <Text style={{ color: 'white', fontWeight: 'bold' }}>✓</Text>}
-            </View>
-            <Text style={{ marginLeft: 8, color: '#334155', fontSize: 15 }}>
-              Insurance
-            </Text>
-          </Pressable>
-
           {/* Sales Tax Option */}
           <Pressable
             onPress={() => setSalesTax(!salesTax)}
@@ -881,7 +867,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
   },
   dropdownScroll: {
-    maxHeight: 220,
+    maxHeight: 'contentHeight',
+    overflow: 'visible',
+    overflowY: 'visible',
+    overflowX: 'visible',
+    height: 'contentHeight',
   },
   dropdownItem: {
     paddingVertical: 10,

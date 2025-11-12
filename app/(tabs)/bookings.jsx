@@ -19,7 +19,7 @@ import {
   RefreshCcw,
 } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { humanize } from '../../utils';
 
@@ -27,6 +27,7 @@ export default function BookingStatusScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
   const { bookings, fetchBookings } = useBooking();
+  const scrollViewRef = useRef(null);
 
   // Fetch on initial mount
   useEffect(() => {
@@ -39,6 +40,8 @@ export default function BookingStatusScreen() {
   useFocusEffect(
     useCallback(() => {
       let active = true;
+      // Scroll to top when screen is focused
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
       (async () => {
         try { if (active) await fetchBookings(); } catch (_) {}
       })();
@@ -57,10 +60,18 @@ export default function BookingStatusScreen() {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const year = date.getFullYear();
+
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12; // Convert to 12-hour format
+    const formattedHours = String(hours).padStart(2, '0');
+
+    return `${day}/${month}/${year} - ${formattedHours}:${minutes} ${ampm}`;
   };
 
   const handleBookingPress = (booking) => {
@@ -88,6 +99,7 @@ export default function BookingStatusScreen() {
 
 
       <ScrollView 
+        ref={scrollViewRef}
         style={styles.bookingsList}
         showsVerticalScrollIndicator={false}
         refreshControl={
