@@ -45,7 +45,7 @@ export default function LoginScreen() {
 
       <View style={styles.form}>
         <View style={styles.inputContainer}>
-          <Mail size={20} color="#64748B" style={styles.inputIcon} />
+          <Mail size={20} color="#999999" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Email address"
@@ -58,7 +58,7 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.inputContainer}>
-          <Lock size={20} color="#64748B" style={styles.inputIcon} />
+          <Lock size={20} color="#999999" style={styles.inputIcon} />
           <TextInput
             style={[styles.input, { paddingRight: 44 }]}
             placeholder="Password"
@@ -74,14 +74,14 @@ export default function LoginScreen() {
             accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? (
-              <EyeOff size={20} color="#64748B" />
+              <EyeOff size={20} color="#999999" />
             ) : (
-              <Eye size={20} color="#64748B" />
+              <Eye size={20} color="#999999" />
             )}
           </TouchableOpacity>
         </View>
         <TouchableOpacity onPress={() => router.push('/forgot-password')} style={{ alignSelf: 'flex-end', marginBottom: 12 }}>
-          <Text style={{ color: '#2563EB', fontWeight: '600' }}>Forgot Password?</Text>
+          <Text style={{ color: '#01304e', fontWeight: '600' }}>Forgot Password?</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -121,15 +121,15 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#1E293B',
+    color: '#01304e',
     marginTop: 16,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#64748B',
+    color: '#777777',
     textAlign: 'center',
   },
   form: {
@@ -143,27 +143,40 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 16,
     paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   inputIcon: {
     marginRight: 12,
+    color: '#999999',
   },
   input: {
     flex: 1,
     fontSize: 16,
-    color: '#1E293B',
+    color: '#333333',
     paddingVertical: 12,
   },
   button: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#01304e',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
   buttonDisabled: {
     backgroundColor: '#94A3B8',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   buttonText: {
     color: '#FFFFFF',
@@ -176,11 +189,11 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   footerText: {
-    color: '#64748B',
+    color: '#777777',
     fontSize: 14,
   },
   link: {
-    color: '#2563EB',
+    color: '#01304e',
     fontSize: 14,
     fontWeight: '600',
   },

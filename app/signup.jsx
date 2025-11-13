@@ -54,14 +54,14 @@ export default function SignupScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Truck size={48} color="#2563EB" />
+        <Truck size={48} color="#01304e" />
         <Text style={styles.title}>Create Account</Text>
         <Text style={styles.subtitle}>Join Cargo360 and start booking</Text>
       </View>
 
       <View style={styles.form}>
         <View style={styles.inputContainer}>
-          <User size={20} color="#64748B" style={styles.inputIcon} />
+          <User size={20} color="#999999" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Full name"
@@ -72,7 +72,7 @@ export default function SignupScreen() {
         </View>
 
         <View style={styles.inputContainer}>
-          <Mail size={20} color="#64748B" style={styles.inputIcon} />
+          <Mail size={20} color="#999999" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Email address"
@@ -86,7 +86,7 @@ export default function SignupScreen() {
 
         {/* 🟢 New Company Name Field (added below email) */}
         <View style={styles.inputContainer}>
-          <Building2 size={20} color="#64748B" style={styles.inputIcon} />
+          <Building2 size={20} color="#999999" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Company name"
@@ -97,7 +97,7 @@ export default function SignupScreen() {
         </View>
 
         <View style={styles.inputContainer}>
-          <Phone size={20} color="#64748B" style={styles.inputIcon} />
+          <Phone size={20} color="#999999" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Phone number"
@@ -109,7 +109,7 @@ export default function SignupScreen() {
         </View>
 
         <View style={styles.inputContainer}>
-  <Lock size={20} color="#64748B" style={styles.inputIcon} />
+  <Lock size={20} color="#999999" style={styles.inputIcon} />
 
   <TextInput
     style={styles.input}
@@ -122,9 +122,9 @@ export default function SignupScreen() {
 
   <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
     {showPassword ? (
-      <EyeOff size={20} color="#64748B" />
+      <EyeOff size={20} color="#999999" />
     ) : (
-      <Eye size={20} color="#64748B" />
+      <Eye size={20} color="#999999" />
     )}
   </TouchableOpacity>
 </View>
@@ -163,15 +163,15 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#1E293B',
+    color: '#01304e',
     marginTop: 16,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#64748B',
+    color: '#777777',
     textAlign: 'center',
   },
   form: {
@@ -185,27 +185,40 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 16,
     paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   inputIcon: {
     marginRight: 12,
+    color: '#999999',
   },
   input: {
     flex: 1,
     fontSize: 16,
-    color: '#1E293B',
+    color: '#333333',
     paddingVertical: 12,
   },
   button: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#01304e',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
   buttonDisabled: {
     backgroundColor: '#94A3B8',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   buttonText: {
     color: '#FFFFFF',
@@ -218,11 +231,11 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   footerText: {
-    color: '#64748B',
+    color: '#777777',
     fontSize: 14,
   },
   link: {
-    color: '#2563EB',
+    color: '#01304e',
     fontSize: 14,
     fontWeight: '600',
   },

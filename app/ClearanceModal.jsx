@@ -50,7 +50,7 @@ export default function ClearanceModal({ visible, onClose }) {
 
       {/* Animated box */}
       <Animated.View style={[styles.modalContainer, { opacity: opacityAnim, transform: [{ scale: scaleAnim }] }]}>
-        <LinearGradient colors={["#01304e", "#ed8411"]} locations={[0, 9, 1]} start={{ x: 0, y: 0 }}  end={{ x: 1, y: 0 }} style={styles.headerGradient}>
+        <LinearGradient colors={["#01304e", "#024d6f", "#ed8411"]} locations={[0, 0.7, 1]} start={{ x: 0, y: 0 }}  end={{ x: 1, y: 0 }} style={styles.headerGradient}>
   <View style={styles.headerContent}>
     <Text style={styles.headerTitle}>Add Clearance</Text>
     <Text style={styles.headerSubtitle}>Documentation</Text>
@@ -102,13 +102,13 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 16,
     marginTop: screenHeight * 0.08,
-    backgroundColor: "#FFFFFFEE",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     overflow: "hidden",
     shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 10,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 12,
   },
   headerGradient: {
     flexDirection: "row",
@@ -144,13 +144,26 @@ headerSubtitle: {
   tabContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    backgroundColor: "#E2E8F0",
+    backgroundColor: "#E5E7EB",
     margin: 10,
     borderRadius: 12,
     padding: 6,
   },
-  tabButton: { flex: 1, alignItems: "center", padding: 10, borderRadius: 8,justifyContent:'center' },
-  tabText: { fontSize: 14, color: "#475569", fontWeight: "500" },
-  tabActive: { backgroundColor: "#fff", elevation: 5 },
-  tabTextActive: { color: "#0f172a", fontWeight: "700" },
+  tabButton: { 
+    flex: 1, 
+    alignItems: "center", 
+    padding: 10, 
+    borderRadius: 8,
+    justifyContent:'center'
+  },
+  tabText: { fontSize: 14, color: "#777777", fontWeight: "500" },
+  tabActive: { 
+    backgroundColor: "#fff", 
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+  tabTextActive: { color: "#01304e", fontWeight: "700" },
 });

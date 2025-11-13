@@ -53,7 +53,7 @@ export default function ResetPasswordScreen() {
 
       <View style={styles.form}>
         <View style={styles.inputContainer}>
-          <Hash size={20} color="#64748B" style={styles.inputIcon} />
+          <Hash size={20} color="#999999" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Verification code"
@@ -76,12 +76,12 @@ export default function ResetPasswordScreen() {
             placeholderTextColor="#94A3B8"
           />
           <TouchableOpacity style={styles.inputRightIcon} onPress={() => setShowPass(v => !v)}>
-            {showPass ? <EyeOff size={20} color="#64748B" /> : <Eye size={20} color="#64748B" />}
+            {showPass ? <EyeOff size={20} color="#999999" /> : <Eye size={20} color="#999999" />}
           </TouchableOpacity>
         </View>
 
         <View style={styles.inputContainer}>
-          <KeyRound size={20} color="#64748B" style={styles.inputIcon} />
+          <KeyRound size={20} color="#999999" style={styles.inputIcon} />
           <TextInput
             style={[styles.input, { paddingRight: 44 }]}
             placeholder="Confirm new password"
@@ -92,7 +92,7 @@ export default function ResetPasswordScreen() {
             placeholderTextColor="#94A3B8"
           />
           <TouchableOpacity style={styles.inputRightIcon} onPress={() => setShowConfirm(v => !v)}>
-            {showConfirm ? <EyeOff size={20} color="#64748B" /> : <Eye size={20} color="#64748B" />}
+            {showConfirm ? <EyeOff size={20} color="#999999" /> : <Eye size={20} color="#999999" />}
           </TouchableOpacity>
         </View>
 
@@ -114,20 +114,50 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 24,
     paddingBottom: 24,
-    backgroundColor: '#024d9a',
+    backgroundColor: '#01304e',
     borderBottomLeftRadius: 60,
     borderBottomRightRadius: 60,
     marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
   backButton: { padding: 8, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.08)', alignSelf: 'flex-start' },
   title: { fontSize: 24, fontWeight: 'bold', color: '#FFFFFF', marginTop: 12, marginBottom: 4, textAlign: 'center' },
   subtitle: { fontSize: 14, color: '#FFFFFF', textAlign: 'center' },
   form: { paddingHorizontal: 24, marginTop: 16 },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 12, borderWidth: 1, borderColor: '#E2E8F0', height: 48, marginBottom: 16 },
-  inputIcon: { marginRight: 8 },
-  input: { flex: 1, color: '#1E293B', fontSize: 16 },
+  inputContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 12, 
+    paddingHorizontal: 12, 
+    borderWidth: 2, 
+    borderColor: '#E5E7EB', 
+    height: 48, 
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  inputIcon: { marginRight: 8, color: '#999999' },
+  input: { flex: 1, color: '#333333', fontSize: 16 },
   inputRightIcon: { position: 'absolute', right: 12, height: '100%', justifyContent: 'center', alignItems: 'center' },
-  primaryButton: { backgroundColor: '#2563EB', paddingVertical: 14, alignItems: 'center', borderRadius: 12 },
+  primaryButton: { 
+    backgroundColor: '#01304e', 
+    paddingVertical: 14, 
+    alignItems: 'center', 
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
   primaryButtonDisabled: { opacity: 0.7 },
   primaryButtonText: { color: '#FFFFFF', fontWeight: '600', fontSize: 16 },
 });

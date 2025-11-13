@@ -206,11 +206,16 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 24,
     paddingBottom: 32,
-    backgroundColor: '#024d9a',
+    backgroundColor: '#01304e',
     borderBottomLeftRadius: 60,
     borderBottomRightRadius: 60,
     marginBottom: 24,
     height: 180,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
   title: {
     fontSize: 24,
@@ -237,22 +242,27 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#333333',
     marginTop: 24,
     marginBottom: 8,
   },
   emptyText: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: '#777777',
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 32,
   },
   emptyButton: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#01304e',
     borderRadius: 12,
     paddingHorizontal: 24,
     paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
   emptyButtonText: {
     color: '#FFFFFF',
@@ -264,11 +274,14 @@ const styles = StyleSheet.create({
   },
   bookingCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   bookingHeader: {
     flexDirection: 'row',
@@ -284,34 +297,36 @@ const styles = StyleSheet.create({
   bookingId: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#01304e',
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
   },
   statusAccepted: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#E6F9ED',
   },
   statusCompleted: {
     backgroundColor: '#DBEAFE',
   },
   statusPending: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FFF3E0',
   },
   statusText: {
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   statusTextAccepted: {
-    color: '#059669',
+    color: '#1B873E',
   },
   statusTextCompleted: {
-    color: '#2563EB',
+    color: '#01304e',
   },
   statusTextPending: {
-    color: '#D97706',
+    color: '#ED8411',
   },
   bookingDetails: {
     gap: 12,
@@ -323,7 +338,7 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#777777',
     flex: 1,
   },
   routeContainer: {
@@ -343,7 +358,7 @@ const styles = StyleSheet.create({
   },
   routeText: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#777777',
     flex: 1,
   },
   dateRow: {
@@ -354,7 +369,7 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: '#999999',
   },
 
 

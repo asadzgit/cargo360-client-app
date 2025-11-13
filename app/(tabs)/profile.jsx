@@ -218,9 +218,9 @@ export default function ProfileScreen() {
             <Text style={styles.sectionTitle}>Account Information</Text>
             <TouchableOpacity style={styles.editBtn} onPress={handleToggleEdit}>
               {editing ? (
-                <X size={16} color="#DC2626" /> // red cross for cancel
+                <X size={16} color="#DC2626" />
                 ) : (
-                <Pencil size={16} color="#2563EB" />
+                <Pencil size={16} color="#01304e" />
                 )}
                 <Text
                 style={[
@@ -236,7 +236,9 @@ export default function ProfileScreen() {
           
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
-              <User size={20} color="#64748B" />
+              <View style={styles.iconContainer}>
+                <User size={20} color="#01304e" />
+              </View>
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Name</Text>
                 {editing ? (
@@ -253,7 +255,9 @@ export default function ProfileScreen() {
               </View>
             </View>
             <View style={styles.infoRow}>
-              <Mail size={20} color="#64748B" />
+              <View style={styles.iconContainer}>
+                <Mail size={20} color="#01304e" />
+              </View>
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Email</Text>
                 <Text style={styles.infoValue}>{profile?.email || user?.email || '—'}</Text>
@@ -262,7 +266,9 @@ export default function ProfileScreen() {
 
             {/* ✅ COMPANY — READ-ONLY */}
             <View style={styles.infoRow}>
-              <Contact size={20} color="#64748B" />
+              <View style={styles.iconContainer}>
+                <Contact size={20} color="#01304e" />
+              </View>
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Company</Text>
                 <Text style={[styles.infoValue]}>
@@ -273,7 +279,9 @@ export default function ProfileScreen() {
             
             {editing || profile?.phone || user?.phone ? (
               <View style={styles.infoRow}>
-                <Phone size={20} color="#64748B" />
+                <View style={styles.iconContainer}>
+                  <Phone size={20} color="#01304e" />
+                </View>
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Phone</Text>
                   {editing ? (
@@ -295,7 +303,9 @@ export default function ProfileScreen() {
           </View>
           <View style={{ marginTop: 16 }}>
             <TouchableOpacity style={styles.actionButton} onPress={() => { setPwdVisible(true); setPwdError(''); }}>
-              <Lock size={20} color="#64748B" />
+              <View style={styles.iconContainerAction}>
+                <Lock size={20} color="#01304e" />
+              </View>
               <Text style={styles.actionText}>Change Password</Text>
             </TouchableOpacity>
           </View>
@@ -335,7 +345,9 @@ export default function ProfileScreen() {
             style={styles.supportRow}
             onPress={() => Linking.openURL('mailto:info@cargo360pk.com')}
           >
-            <Mail size={20} color="#64748B" />
+            <View style={styles.iconContainerSupport}>
+              <Mail size={20} color="#01304e" />
+            </View>
             <Text style={styles.supportLinkTextNoDecoration}>info@cargo360pk.com</Text>
           </TouchableOpacity>
 
@@ -343,7 +355,9 @@ export default function ProfileScreen() {
             style={styles.supportRow}
             onPress={() => Linking.openURL('tel:923337766609')}
           >
-            <Phone size={20} color="#64748B" />
+            <View style={styles.iconContainerSupport}>
+              <Phone size={20} color="#01304e" />
+            </View>
             <Text style={styles.supportLinkTextNoDecoration}>92 333 7766609</Text>
           </TouchableOpacity>
 
@@ -351,7 +365,9 @@ export default function ProfileScreen() {
             style={styles.supportRow}
             onPress={() => Linking.openURL('https://cargo360pk.com/privacy-policy')}
           >
-            <Contact size={20} color="#64748B" />
+            <View style={styles.iconContainerSupport}>
+              <Contact size={20} color="#01304e" />
+            </View>
             <Text style={styles.supportLinkText}>Privacy Policy</Text>
           </TouchableOpacity>
         </View>
@@ -401,7 +417,7 @@ export default function ProfileScreen() {
             />
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
               <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: '#2563EB' }]}
+                style={[styles.modalButton, { backgroundColor: '#01304e' }]}
                 onPress={handleChangePassword}
                 disabled={pwdLoading}
               >
@@ -431,9 +447,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 80,
     paddingHorizontal: 24,
-    // paddingBottom: 32,
     height: 180,
-    backgroundColor: '#024d9a',
+    backgroundColor: '#01304e',
     borderBottomLeftRadius: 60,
     borderBottomRightRadius: 60,
     marginBottom: 12,
@@ -441,8 +456,8 @@ const styles = StyleSheet.create({
     elevation: 4,
     shadowColor: '#000',
     shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
   },
   scrollContent: {
     paddingBottom: 24,
@@ -451,7 +466,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#01304e',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -478,21 +493,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   statNumber: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2563EB',
+    color: '#01304e',
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#777777',
     textAlign: 'center',
+    fontWeight: '500',
   },
   infoSection: {
     paddingHorizontal: 24,
@@ -500,33 +519,62 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#01304e',
     marginBottom: 16,
   },
   infoCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    gap: 16,
+    borderRadius: 14,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    gap: 20,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#F0F4F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconContainerAction: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#F0F4F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconContainerSupport: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#F0F4F8',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   infoContent: {
     flex: 1,
   },
   infoLabel: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: '#999999',
     marginBottom: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   infoValue: {
     fontSize: 14,
-    color: '#1E293B',
+    color: '#333333',
     fontWeight: '500',
   },
   actionsSection: {
@@ -539,13 +587,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     padding: 16,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    gap: 14,
   },
   actionText: {
     fontSize: 16,
-    color: '#64748B',
+    color: '#333333',
     fontWeight: '500',
   },
   logoutButton: {
@@ -578,37 +629,41 @@ const styles = StyleSheet.create({
   supportTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#01304e',
   },
   supportRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
     paddingVertical: 4,
     backgroundColor: '#FFFFFF',
     paddingTop: 16,
     paddingBottom: 16,
     paddingLeft: 16,
+    paddingRight: 16,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   supportLinkText: {
-    color: '#2563EB',
-    fontSize: 14,
-    fontWeight: '500',
+    color: '#01304e',
+    fontSize: 15,
+    fontWeight: '600',
     textDecorationLine: 'underline',
+    flex: 1,
   },
   supportLinkTextNoDecoration: {
-    color: '#2563EB',
     textDecorationLine: 'none',
-    fontSize: 16,
-    color: '#64748B',
+    fontSize: 15,
+    color: '#333333',
     fontWeight: '500',
+    flex: 1,
   },
   supportText: {
-    color: '#64748B',
+    color: '#777777',
     fontSize: 12,
     textAlign: 'center',
   },
@@ -629,30 +684,35 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#E8F0F5',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: '#01304e',
   },
   editBtnText: {
-    color: '#2563EB',
+    color: '#01304e',
     fontWeight: '600',
     fontSize: 12,
   },
   inputInline: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    color: '#1E293B',
+    color: '#333333',
   },
   saveBtn: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#01304e',
     paddingVertical: 12,
     alignItems: 'center',
     borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
   saveBtnText: {
     color: '#FFFFFF',
@@ -674,17 +734,17 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#01304e',
     marginBottom: 10,
   },
   modalInput: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    color: '#1E293B',
+    color: '#333333',
     marginTop: 8,
   },
   modalButton: {
@@ -692,6 +752,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
     borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   modalButtonText: {
     color: '#FFFFFF',

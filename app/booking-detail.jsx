@@ -12,6 +12,7 @@ import {
   ClipboardList,
   Phone,
   RefreshCcw,
+  MapPin,
 } from 'lucide-react-native';
 import { useBooking } from '../context/BookingContext';
 import { bookingAPI } from '../services/api';
@@ -336,8 +337,8 @@ const openMaps = () => {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={handleRefresh}
-          colors={['#2563EB']}
-          tintColor="#2563EB"
+          colors={['#01304e']}
+          tintColor="#01304e"
         />
       }
     >
@@ -362,7 +363,7 @@ const openMaps = () => {
           ) : (
             <>
               <RefreshCcw size={16} color="#FFFFFF" />
-              <Text style={styles.refreshText}>Refreh</Text>
+              <Text style={styles.refreshText}>Refresh</Text>
             </>
           )}
         </TouchableOpacity>
@@ -394,7 +395,9 @@ const openMaps = () => {
           <Text style={styles.cardTitle}>Vehicle & Load Information</Text>
          
           <View style={styles.detailRow}>
-            <Truck size={20} color="#2563EB" />
+            <View style={styles.iconContainer}>
+              <Truck size={20} color="#01304e" />
+            </View>
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Vehicle Type</Text>
               <Text style={styles.detailValue}>{humanize(booking.vehicleType)}</Text>
@@ -403,7 +406,9 @@ const openMaps = () => {
 
 
           <View style={styles.detailRow}>
-            <Package size={20} color="#059669" />
+            <View style={styles.iconContainer}>
+              <Package size={20} color="#01304e" />
+            </View>
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Cargo Type</Text>
               <Text style={styles.detailValue}>{humanize(booking.loadType)}</Text>
@@ -412,25 +417,21 @@ const openMaps = () => {
 
 
           <View style={styles.detailRow}>
-            <ContainerIcon size={20} color="aqua" />
+            <View style={styles.iconContainer}>
+              <ContainerIcon size={20} color="#01304e" />
+            </View>
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Cargo Weight (kg)</Text>
               <Text style={styles.detailValue}>{booking.cargoWeight || 'N/A'}</Text>
             </View>
           </View>
 
-          {/* <View style={styles.detailRow}>
-            <ContainerIcon size={20} color="aqua" />   
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Insurance:</Text>
-              <Text style={styles.detailValue}>{booking?.insurance ? 'Yes' : 'No'}</Text>
-            </View>
-          </View> */}
-
           <View style={styles.detailRow}>
-            <ContainerIcon size={20} color="aqua" />  
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Sales Tax Invoice:</Text>
+            <View style={styles.iconContainer}>
+              <ContainerIcon size={20} color="#01304e" />
+            </View>
+            <View style={styles.detailContent}>
+              <Text style={styles.detailLabel}>Sales Tax Invoice</Text>
               <Text style={styles.detailValue}>{booking?.salesTax ? 'Yes' : 'No'}</Text>
             </View>
           </View>
@@ -450,7 +451,9 @@ const openMaps = () => {
          
           <View style={styles.routeContainer}>
             <View style={styles.routePoint}>
-              <View style={styles.routeDotStart} />
+              <View style={styles.routeIconContainer}>
+                <MapPin size={18} color="#1B873E" />
+              </View>
               <View style={styles.routeInfo}>
                 <Text style={styles.routeLabel}>Pickup Location</Text>
                 <Text style={styles.routeAddress}>{booking.fromLocation}</Text>
@@ -462,7 +465,9 @@ const openMaps = () => {
 
 
             <View style={styles.routePoint}>
-              <View style={styles.routeDotEnd} />
+              <View style={styles.routeIconContainer}>
+                <MapPin size={18} color="#DC2626" />
+              </View>
               <View style={styles.routeInfo}>
                 <Text style={styles.routeLabel}>Delivery Location</Text>
                 <Text style={styles.routeAddress}>{booking.toLocation}</Text>
@@ -476,7 +481,9 @@ const openMaps = () => {
           <Text style={styles.cardTitle}>Booking Information</Text>
          
           <View style={styles.detailRow}>
-            <Calendar size={20} color="#EA580C" />
+            <View style={styles.iconContainer}>
+              <Calendar size={20} color="#01304e" />
+            </View>
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Requested On</Text>
               <Text style={styles.detailValue}>{formatDate(booking.createdAt)}</Text>
@@ -659,16 +666,16 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 15,
     paddingHorizontal: 24,
-    backgroundColor: '#024d9a',
+    backgroundColor: '#01304e',
     color: '#FFFFFF',
     gap: 16,
     marginBottom: 24,
     zIndex: 10,
-    elevation: 4,               // Android
-    shadowColor: '#000',        // iOS
+    elevation: 4,
+    shadowColor: '#000',
     shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
     height: 180,
     borderBottomLeftRadius: 60,
     borderBottomRightRadius: 60,
@@ -702,79 +709,99 @@ const styles = StyleSheet.create({
   bookingId: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#01304e',
   },
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   statusAccepted: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#E6F9ED',
   },
   statusCompleted: {
     backgroundColor: '#DBEAFE',
   },
   statusPending: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FFF3E0',
   },
   statusText: {
     fontSize: 12,
     fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   statusTextAccepted: {
-    color: '#059669',
+    color: '#1B873E',
   },
   statusTextCompleted: {
-    color: '#2563EB',
+    color: '#01304e',
   },
   statusTextPending: {
-    color: '#D97706',
+    color: '#ED8411',
   },
   detailsCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 20,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 16,
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#01304e',
+    marginBottom: 20,
+    letterSpacing: 0.3,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 16,
-    gap: 12,
+    marginBottom: 20,
+    gap: 14,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#F0F4F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
   },
   detailContent: {
     flex: 1,
+    paddingTop: 2,
   },
   detailLabel: {
     fontSize: 12,
-    color: '#94A3B8',
-    marginBottom: 4,
+    color: '#999999',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    fontWeight: '600',
   },
   detailValue: {
-    fontSize: 14,
-    color: '#1E293B',
+    fontSize: 15,
+    color: '#333333',
     fontWeight: '500',
+    lineHeight: 21,
   },
   descriptionSection: {
-    marginTop: 8,
-    paddingTop: 16,
+    marginTop: 4,
+    paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: '#E5E7EB',
   },
   descriptionText: {
     fontSize: 14,
-    color: '#64748B',
-    lineHeight: 20,
-    marginTop: 4,
+    color: '#777777',
+    lineHeight: 22,
+    marginTop: 6,
   },
   routeContainer: {
     paddingVertical: 8,
@@ -782,7 +809,16 @@ const styles = StyleSheet.create({
   routePoint: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
+    gap: 14,
+  },
+  routeIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#F0F4F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
   },
   routeDotStart: {
     width: 12,
@@ -799,24 +835,29 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   routeConnector: {
-    width: 2,
-    height: 24,
+    width: 3,
+    height: 28,
     backgroundColor: '#E2E8F0',
-    marginLeft: 5,
-    marginVertical: 8,
+    marginLeft: 18,
+    marginVertical: 4,
   },
   routeInfo: {
     flex: 1,
+    paddingTop: 2,
   },
   routeLabel: {
     fontSize: 12,
-    color: '#94A3B8',
-    marginBottom: 4,
+    color: '#999999',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    fontWeight: '600',
   },
   routeAddress: {
     fontSize: 14,
-    color: '#1E293B',
+    color: '#333333',
     fontWeight: '500',
+    lineHeight: 20,
   },
   driverInfo: {
     flexDirection: 'row',
@@ -828,7 +869,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#01304e',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -838,17 +879,17 @@ const styles = StyleSheet.create({
   driverName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#01304e',
     marginBottom: 2,
   },
   driverRating: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#777777',
     marginBottom: 2,
   },
   driverVehicle: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: '#999999',
   },
   contactButton: {
     backgroundColor: '#059669',
@@ -865,17 +906,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   pendingInfo: {
-    backgroundColor: '#FFFBEB',
+    backgroundColor: '#FFF3E0',
     borderRadius: 12,
     padding: 20,
-    borderWidth: 1,
-    borderColor: '#FEF3C7',
+    borderWidth: 2,
+    borderColor: '#ED8411',
     alignItems: 'center',
   },
   pendingTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#D97706',
+    color: '#ED8411',
     marginBottom: 8,
   },
   pendingText: {
@@ -892,7 +933,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: '#64748B',
+    color: '#777777',
     textAlign: 'center',
   },
   modalBackdrop: {
@@ -906,24 +947,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
     width: '100%',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#01304e',
     marginBottom: 12,
   },
   modalInput: {
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 10,
-    color: '#1E293B',
+    color: '#333333',
     backgroundColor: '#FFFFFF',
   },
   modalButton: {
@@ -931,6 +975,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   modalButtonText: {
     color: '#FFFFFF',

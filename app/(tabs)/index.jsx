@@ -59,8 +59,8 @@ export default function HomeScreen() {
     <RefreshControl
       refreshing={refreshing}
       onRefresh={onRefresh}
-      colors={['#2563EB']}
-      tintColor="#2563EB"
+      colors={['#01304e']}
+      tintColor="#01304e"
     />
   }
 >
@@ -94,7 +94,7 @@ export default function HomeScreen() {
       style={styles.halfButtonLeft}
       onPress={() => setIsModalOpen(true)}
     >
-      <Plus size={20} color="#2563EB" />
+      <Plus size={20} color="#01304e" />
       <Text style={styles.halfButtonText}>Clearance Doc</Text>
     </TouchableOpacity>
 
@@ -102,7 +102,7 @@ export default function HomeScreen() {
       style={styles.halfButtonRight}
       onPress={() => router.push('/(tabs)/bookings')}
     >
-      <ClipboardList size={20} color="#2563EB" />
+      <ClipboardList size={20} color="#01304e" />
       <Text style={styles.halfButtonText}>My Bookings</Text>
     </TouchableOpacity>
   </View>
@@ -189,10 +189,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     marginBottom: 32,
     paddingTop: 50,
-    backgroundColor: '#024d9a',
+    backgroundColor: '#01304e',
     height: 180,
     borderBottomLeftRadius: 60,
     borderBottomRightRadius: 60,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
   headerContent: {
     flex: 1,
@@ -206,7 +211,7 @@ const styles = StyleSheet.create({
   },
   userEmail: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#FFFFFF',
     marginTop: 8,
   },
   statsContainer: {
@@ -219,21 +224,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   statNumber: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2563EB',
+    color: '#01304e',
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#777777',
     textAlign: 'center',
+    fontWeight: '500',
   },
   actionsContainer: {
     paddingHorizontal: 24,
@@ -241,13 +250,18 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   primaryAction: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#01304e',
     borderRadius: 12,
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
   primaryActionText: {
     color: '#FFFFFF',
@@ -262,11 +276,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderWidth: 2,
+    borderColor: '#01304e',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   secondaryActionText: {
-    color: '#2563EB',
+    color: '#01304e',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -277,7 +296,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#01304e',
     marginBottom: 16,
   },
   emptyState: {
@@ -288,12 +307,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#64748B',
+    color: '#333333',
     marginTop: 16,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: '#777777',
     marginTop: 4,
   },
   recentBookings: {
@@ -301,13 +320,17 @@ const styles = StyleSheet.create({
   },
   recentBookingCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    marginBottom: 4,
   },
   recentBookingInfo: {
     flex: 1,
@@ -315,42 +338,44 @@ const styles = StyleSheet.create({
   recentBookingId: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#01304e',
     marginBottom: 4,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: '#E5E7EB',
     paddingBottom: 4,
   },
   recentBookingTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#333333',
     marginBottom: 4,
   },
   recentBookingRoute: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#777777',
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
   },
   statusAccepted: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#E6F9ED',
   },
   statusPending: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FFF3E0',
   },
   statusText: {
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   statusTextAccepted: {
-    color: '#059669',
+    color: '#1B873E',
   },
   statusTextPending: {
-    color: '#D97706',
+    color: '#ED8411',
   },
   routeContainer: {
     paddingLeft: 4,
@@ -369,7 +394,7 @@ const styles = StyleSheet.create({
   },
   routeText: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#777777',
     flex: 1,
   },
   recentHeader: {
@@ -435,7 +460,7 @@ modalTitle: {
   color: '#1E293B',
 },
 modalCloseButton: {
-  backgroundColor: '#2563EB',
+  backgroundColor: '#01304e',
   borderRadius: 8,
   paddingVertical: 10,
   paddingHorizontal: 20,
@@ -458,10 +483,14 @@ halfButtonLeft: {
   justifyContent: 'center',
   backgroundColor: '#FFFFFF',
   borderRadius: 12,
-  // padding: 16,
   height: 60,
-  borderWidth: 1,
-  borderColor: '#E2E8F0',
+  borderWidth: 2,
+  borderColor: '#01304e',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.08,
+  shadowRadius: 4,
+  elevation: 2,
 },
 
 halfButtonRight: {
@@ -471,14 +500,18 @@ halfButtonRight: {
   justifyContent: 'center',
   backgroundColor: '#FFFFFF',
   borderRadius: 12,
-  // paddingLeft: 1,
-  borderWidth: 1,
+  borderWidth: 2,
   height: 60,
-  borderColor: '#E2E8F0',
+  borderColor: '#01304e',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.08,
+  shadowRadius: 4,
+  elevation: 2,
 },
 
 halfButtonText: {
-  color: '#2563EB',
+  color: '#01304e',
   fontSize: 15,
   fontWeight: '600',
   marginLeft: 2,
