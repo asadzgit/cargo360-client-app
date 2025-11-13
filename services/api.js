@@ -98,6 +98,8 @@ export const bookingAPI = {
   update: (id, body) => api.put(`/shipments/${id}`, body),
   cancel: (id) => api.patch(`/shipments/${id}/cancel`),
   currentLocation: (id) => api.get(`/location/shipments/${id}/current`),
+  createDiscountRequest: (id, requestAmount) => api.post(`/shipments/${id}/discount-request`, { requestAmount }),
+  confirm: (id) => api.patch(`/shipments/${id}/confirm`),
 };
 
 export const userAPI = {

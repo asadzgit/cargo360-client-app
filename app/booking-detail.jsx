@@ -18,7 +18,7 @@ import { useBooking } from '../context/BookingContext';
 import { bookingAPI } from '../services/api';
 import Constants from 'expo-constants';
 import { useEffect, useState, useCallback } from 'react';
-import { humanize } from '../utils';
+import { humanize, formatCurrency, numberToWords } from '../utils';
 
 
 export default function BookingDetailScreen() {
@@ -58,6 +58,13 @@ export default function BookingDetailScreen() {
   const [locData, setLocData] = useState(null); // { latitude, longitude, timestamp, speed, heading, accuracy, driver }
   const [locAddress, setLocAddress] = useState('');
 
+  // Discount request state
+  const [discountBudget, setDiscountBudget] = useState('');
+  const [discountLoading, setDiscountLoading] = useState(false);
+
+  // Confirmation state
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
 
   const [booking, setBooking] = useState(() => {
     if (!bookingFromContext) return null;
@@ -75,6 +82,7 @@ export default function BookingDetailScreen() {
       salesTax: bookingFromContext.salesTax,
       cargoSize: bookingFromContext.cargoSize,
       budget: bookingFromContext.budget,
+      DiscountRequest: bookingFromContext.DiscountRequest || null,
     };
   });
   const [error, setError] = useState(null);
@@ -102,6 +110,7 @@ export default function BookingDetailScreen() {
             budget: data?.budget,
             // insurance: data?.insurance || false,
             salesTax: data?.salesTax || false,
+            DiscountRequest: data?.DiscountRequest || null,
 
           };
           console.log(normalized);
@@ -155,6 +164,7 @@ export default function BookingDetailScreen() {
         budget: data?.budget,
         // insurance: data?.insurance || false,
         salesTax: data?.salesTax || false,
+        DiscountRequest: data?.DiscountRequest || null,
 
       };
       console.log(normalized);
@@ -253,6 +263,93 @@ export default function BookingDetailScreen() {
     } finally {
       setUpdating(false);
     }
+  };
+
+  // Handle discount request
+  const handleRequestDiscount = async () => {
+    const amount = parseFloat(discountBudget);
+    
+    // Validation
+    if (isNaN(amount) || amount <= 0) {
+      Alert.alert('Invalid Amount', 'Please enter a valid budget amount greater than 0.');
+      return;
+    }
+
+    if (amount > 99999999) {
+      Alert.alert('Invalid Amount', 'Amount is too large. Maximum is 99,999,999.');
+      return;
+    }
+
+    try {
+      setDiscountLoading(true);
+      const response = await bookingAPI.createDiscountRequest(booking.id, amount);
+      
+      Alert.alert('Success', 'Discount request submitted successfully. We will review and get back to you.');
+      setDiscountBudget('');
+      
+      // Refresh booking to get updated DiscountRequest
+      await handleRefresh();
+    } catch (error) {
+      const errorMessage = error?.message || 'Failed to create discount request';
+      if (errorMessage.includes('already exists')) {
+        Alert.alert('Request Exists', 'You already have a discount request for this booking.');
+      } else {
+        Alert.alert('Error', errorMessage);
+      }
+    } finally {
+      setDiscountLoading(false);
+    }
+  };
+
+  // Handle order confirmation
+  const handleConfirmOrder = () => {
+    // Show confirmation dialog with terms
+    Alert.alert(
+      'Confirm Order',
+      `You are about to confirm this shipment with the following details:\n\n` +
+      `• Vehicle: ${humanize(booking.vehicleType)}\n` +
+      `• Cargo: ${humanize(booking.loadType)}\n` +
+      `• Route: ${booking.fromLocation} → ${booking.toLocation}\n` +
+      `• Budget: PKR ${formatCurrency(booking.budget)}\n\n` +
+      `By confirming, you agree to the terms and conditions of this shipment.\n\n` +
+      `Do you want to proceed?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Confirm Order',
+          onPress: async () => {
+            try {
+              setConfirmLoading(true);
+              const response = await bookingAPI.confirm(booking.id);
+              
+              // Update booking status locally
+              setBooking(prev => ({
+                ...prev,
+                status: 'confirmed'
+              }));
+
+              // Refresh to get latest data
+              await handleRefresh();
+
+              // Show success message
+              Alert.alert(
+                'Order Confirmed! ✓',
+                'Your shipment has been confirmed successfully. You will be notified shortly once a driver picks up your order.',
+                [{ text: 'OK' }]
+              );
+            } catch (error) {
+              const errorMessage = error?.message || 'Failed to confirm order';
+              Alert.alert('Error', errorMessage);
+            } finally {
+              setConfirmLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
 
@@ -490,6 +587,127 @@ const openMaps = () => {
             </View>
           </View>
         </View>
+
+
+        {/* Pricing & Budget Section */}
+        <View style={styles.pricingCard}>
+          <Text style={styles.cardTitle}>Pricing</Text>
+
+          {/* No Budget Set */}
+          {!booking.budget && (
+            <Text style={styles.negotiationText}>In Negotiation</Text>
+          )}
+
+          {/* Budget Exists */}
+          {booking.budget && (
+            <>
+              {/* Discount Request Status Messages */}
+              {booking.DiscountRequest?.status === 'pending' && (
+                <View style={styles.statusMessageContainer}>
+                  <Text style={styles.statusPendingText}>Discount request pending</Text>
+                  <Text style={styles.statusSubtext}>
+                    Your request for PKR {formatCurrency(booking.DiscountRequest.requestAmount)} is under review
+                  </Text>
+                </View>
+              )}
+
+              {booking.DiscountRequest?.status === 'accepted' && (
+                <View style={styles.statusMessageContainer}>
+                  <Text style={styles.statusAcceptedText}>✓ Discount request accepted</Text>
+                  <Text style={styles.statusAcceptedText}>
+                    Amount accepted: PKR {formatCurrency(booking.DiscountRequest.requestAmount)}
+                  </Text>
+                </View>
+              )}
+
+              {booking.DiscountRequest?.status === 'rejected' && (
+                <View style={styles.statusMessageContainer}>
+                  <Text style={styles.statusRejectedText}>✗ Discount request rejected</Text>
+                  <Text style={styles.statusRejectedText}>
+                    Amount rejected: PKR {formatCurrency(booking.DiscountRequest.requestAmount)}
+                  </Text>
+                </View>
+              )}
+
+              {/* Show Discount Request Form (only if no discount request or rejected) */}
+              {(!booking.DiscountRequest || booking.DiscountRequest.status === 'rejected') && (
+                <View style={styles.discountForm}>
+                  <Text style={styles.discountLabel}>
+                    Want a discount?{'\n'}Enter your budget (PKR)
+                  </Text>
+                  <TextInput
+                    style={styles.discountInput}
+                    placeholder="Your budget amount"
+                    placeholderTextColor="#999999"
+                    keyboardType="numeric"
+                    value={discountBudget}
+                    onChangeText={setDiscountBudget}
+                    maxLength={8}
+                    editable={!discountLoading}
+                  />
+                  <TouchableOpacity
+                    style={[styles.discountButton, discountLoading && styles.discountButtonDisabled]}
+                    onPress={handleRequestDiscount}
+                    disabled={discountLoading}
+                  >
+                    <Text style={styles.discountButtonText}>
+                      {discountLoading ? 'Submitting...' : 'Request discount'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Budget Display */}
+              <Text style={styles.budgetDescription}>
+                Best price after discussion with several brokers
+              </Text>
+              
+              <View style={styles.budgetRow}>
+                <Text style={styles.budgetLabel}>Budget</Text>
+                <Text style={styles.budgetAmount}>
+                  PKR {formatCurrency(booking.budget)}
+                </Text>
+              </View>
+
+              {/* Amount in Words */}
+              <View style={styles.wordsContainer}>
+                <Text style={styles.wordsLabel}>Amount in words</Text>
+                <Text style={styles.wordsValue}>
+                  {numberToWords(booking.budget)}
+                </Text>
+              </View>
+            </>
+          )}
+        </View>
+
+        {/* Confirmation Button - Only show if budget exists and status is pending or assigned */}
+        {booking.budget && ['pending', 'assigned'].includes((booking.status || '').toLowerCase()) && (
+          <View style={styles.confirmationSection}>
+            <Text style={styles.confirmationTitle}>Ready to proceed?</Text>
+            <Text style={styles.confirmationText}>
+              By confirming this order, you agree to the shipment details, pricing, and terms & conditions. 
+              Once confirmed, a driver will be assigned to your shipment.
+            </Text>
+            
+            <TouchableOpacity
+              style={[styles.confirmButton, confirmLoading && styles.confirmButtonDisabled]}
+              onPress={handleConfirmOrder}
+              disabled={confirmLoading}
+            >
+              {confirmLoading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <>
+                  <Text style={styles.confirmButtonText}>✓ Confirm Order & Agree to Terms</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <Text style={styles.confirmationNote}>
+              You will be notified once a driver accepts your shipment
+            </Text>
+          </View>
+        )}
 
 
         {booking.status === 'Accepted' && (
@@ -1009,6 +1227,198 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   /* ---------- end added styles ---------- */
+
+  /* ---------- Pricing & Discount Request Styles ---------- */
+  pricingCard: {
+    backgroundColor: '#01304e',
+    borderRadius: 14,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  negotiationText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  statusMessageContainer: {
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  statusPendingText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  statusSubtext: {
+    color: '#E5E7EB',
+    fontSize: 13,
+  },
+  statusAcceptedText: {
+    color: '#ed8411',
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  statusRejectedText: {
+    color: '#ef4444',
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  discountForm: {
+    marginBottom: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  discountLabel: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  discountInput: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#333333',
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+  },
+  discountButton: {
+    backgroundColor: '#ed8411',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  discountButtonDisabled: {
+    opacity: 0.6,
+  },
+  discountButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  budgetDescription: {
+    color: '#E5E7EB',
+    fontSize: 13,
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  budgetRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  budgetLabel: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  budgetAmount: {
+    color: '#FFFFFF',
+    fontSize: 26,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  wordsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginTop: 14,
+    gap: 12,
+  },
+  wordsLabel: {
+    color: '#ed8411',
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  wordsValue: {
+    color: '#ed8411',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'right',
+    flex: 1,
+  },
+  /* ---------- end Pricing & Discount Request Styles ---------- */
+
+  /* ---------- Confirmation Section Styles ---------- */
+  confirmationSection: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 2,
+    borderColor: '#01304e',
+  },
+  confirmationTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#01304e',
+    marginBottom: 12,
+  },
+  confirmationText: {
+    fontSize: 14,
+    color: '#555555',
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  confirmButton: {
+    backgroundColor: '#1B873E',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  confirmButtonDisabled: {
+    opacity: 0.6,
+  },
+  confirmButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  confirmationNote: {
+    fontSize: 12,
+    color: '#777777',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  /* ---------- end Confirmation Section Styles ---------- */
 });
 
 
