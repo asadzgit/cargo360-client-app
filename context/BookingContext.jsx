@@ -7,23 +7,35 @@ export function BookingProvider({ children }) {
   const [user, setUser] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const lastFetchedAtRef = useRef(0);
   const inFlightRef = useRef(null);
   const CACHE_TTL_MS = 15000; // 15s cache window to reduce churn on focus
 
   useEffect(() => {
+    let mounted = true;
     (async () => {
       try {
         setLoading(true);
         const { data } = await authAPI.me();
+        if (!mounted) return;
         setUser(data);
         await fetchBookings(undefined, { force: true });
       } catch (_e) {
-        // no-op: not logged in or token invalid
+        await clearTokens();
+        if (mounted) {
+          setUser(null);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          setAuthReady(true);
+        }
       }
     })();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   async function login(email, password) {
@@ -130,13 +142,14 @@ export function BookingProvider({ children }) {
     user,
     bookings,
     loading,
+    authReady,
     login,
     signup,
     logout,
     fetchBookings,
     addBooking,
     getBookingById,
-  }), [user, bookings, loading]);
+  }), [user, bookings, loading, authReady]);
 
   return (
     <BookingContext.Provider value={value}>
