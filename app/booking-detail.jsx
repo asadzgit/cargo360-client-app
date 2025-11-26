@@ -1,6 +1,7 @@
 // new code by gpt
 
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, TextInput, Linking, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, TextInput, Linking, ActivityIndicator, RefreshControl, Pressable, Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
   ArrowLeft,
@@ -13,13 +14,23 @@ import {
   Phone,
   RefreshCcw,
   MapPin,
+  X,
+  Receipt,
+  FileText,
 } from 'lucide-react-native';
 import { useBooking } from '../context/BookingContext';
 import { bookingAPI } from '../services/api';
 import Constants from 'expo-constants';
-import { useEffect, useState, useCallback } from 'react';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { humanize, formatCurrency, numberToWords } from '../utils';
 
+const vehicleTypes = [
+  'Small Truck (1-2 Tons)',
+  'Medium Truck (3-5 Tons)', 
+  'Large Truck (6-10 Tons)',
+  'Heavy Truck (10+ Tons)'
+];
 
 export default function BookingDetailScreen() {
   const router = useRouter();
@@ -35,6 +46,11 @@ export default function BookingDetailScreen() {
   const [updating, setUpdating] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
+  const [customVehicleType, setCustomVehicleType] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [deliveryDateDisplay, setDeliveryDateDisplay] = useState('');
+  const [pickupDate, setPickupDate] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
   const [form, setForm] = useState({
     pickupLocation: '',
     dropLocation: '',
@@ -44,6 +60,8 @@ export default function BookingDetailScreen() {
     cargoWeight: '',
     cargoSize: '',
     budget: '',
+    salesTax: false,
+    numContainers: '',
   });
 
 
@@ -65,6 +83,18 @@ export default function BookingDetailScreen() {
   // Confirmation state
   const [confirmLoading, setConfirmLoading] = useState(false);
 
+  // Location autocomplete state
+  const [pickupOptions, setPickupOptions] = useState([]);
+  const [dropOptions, setDropOptions] = useState([]);
+  const [pickupLoading, setPickupLoading] = useState(false);
+  const [dropLoading, setDropLoading] = useState(false);
+  const pickupDebounceRef = useRef(null);
+  const dropDebounceRef = useRef(null);
+
+  // Modal animation values
+  const modalOpacity = useRef(new Animated.Value(0)).current;
+  const modalTranslateY = useRef(new Animated.Value(50)).current;
+
 
   const [booking, setBooking] = useState(() => {
     if (!bookingFromContext) return null;
@@ -82,6 +112,9 @@ export default function BookingDetailScreen() {
       salesTax: bookingFromContext.salesTax,
       cargoSize: bookingFromContext.cargoSize,
       budget: bookingFromContext.budget,
+      numContainers: bookingFromContext.numContainers || bookingFromContext.numberOfVehicles || '',
+      deliveryDate: bookingFromContext.deliveryDate || bookingFromContext.delivery_date || '',
+      pickupDate: bookingFromContext.pickupDate || bookingFromContext.pickup_date || bookingFromContext.createdAt || '',
       DiscountRequest: bookingFromContext.DiscountRequest || null,
     };
   });
@@ -110,6 +143,9 @@ export default function BookingDetailScreen() {
             budget: data?.budget,
             // insurance: data?.insurance || false,
             salesTax: data?.salesTax || false,
+            numContainers: data?.numContainers || data?.numberOfVehicles || '',
+            deliveryDate: data?.deliveryDate || data?.delivery_date || '',
+            pickupDate: data?.pickupDate || data?.pickup_date || data?.createdAt || '',
             DiscountRequest: data?.DiscountRequest || null,
 
           };
@@ -128,20 +164,75 @@ export default function BookingDetailScreen() {
   useEffect(() => {
     console.log("booking", booking)
     if (booking) {
+      const currentVehicleType = booking.vehicleType || '';
+      // Check if the current vehicle type is in the predefined list
+      const isPredefined = [...vehicleTypes, 'Other (please specify)'].includes(currentVehicleType);
+      
       setForm({
         pickupLocation: booking.fromLocation || '',
         dropLocation: booking.toLocation || '',
         cargoType: booking.loadType || '',
-        vehicleType: booking.vehicleType || '',
+        vehicleType: isPredefined ? currentVehicleType : (currentVehicleType ? 'Other (please specify)' : ''),
         description: booking.description || '',
         cargoWeight: booking.cargoWeight ? String(booking.cargoWeight) : '',
-        salesTax: booking.salesTax || 'No',
-        // insurance: booking.insurance || 'No',
+        salesTax: booking.salesTax || false,
+        // insurance: booking.insurance || false,
         cargoSize: booking.cargoSize || '',
         budget: booking.budget ? String(booking.budget) : '',
+        numContainers: booking.numContainers ? String(booking.numContainers) : '',
       });
+      
+      // Set delivery date
+      const deliveryDateISO = booking.deliveryDate || booking.delivery_date || '';
+      setDeliveryDate(deliveryDateISO);
+      setDeliveryDateDisplay(formatISOToDisplay(deliveryDateISO));
+      
+      // Set pickup date (for validation)
+      const pickupDateISO = booking.pickupDate || booking.pickup_date || booking.createdAt || '';
+      setPickupDate(pickupDateISO);
+      
+      // Set custom vehicle type if it's not in the predefined list
+      if (!isPredefined && currentVehicleType) {
+        setCustomVehicleType(currentVehicleType);
+      } else {
+        setCustomVehicleType('');
+      }
     }
   }, [booking]);
+
+  // Modal animation effect
+  useEffect(() => {
+    if (editVisible) {
+      // Animate in - slow and smooth
+      Animated.parallel([
+        Animated.timing(modalOpacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(modalTranslateY, {
+          toValue: 0,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      // Animate out - slow and smooth
+      Animated.parallel([
+        Animated.timing(modalOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(modalTranslateY, {
+          toValue: 50,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [editVisible, modalOpacity, modalTranslateY]);
 
 
   // ---------- ADDED: handleRefresh used by both pull-to-refresh and the button ----------
@@ -160,13 +251,16 @@ export default function BookingDetailScreen() {
         status: data?.status || 'Pending',
         description: data?.description,
         cargoWeight: data?.cargoWeight,
-        cargoSize: data?.cargoSize,
-        budget: data?.budget,
-        // insurance: data?.insurance || false,
-        salesTax: data?.salesTax || false,
-        DiscountRequest: data?.DiscountRequest || null,
+            cargoSize: data?.cargoSize,
+            budget: data?.budget,
+            // insurance: data?.insurance || false,
+            salesTax: data?.salesTax || false,
+            numContainers: data?.numContainers || data?.numberOfVehicles || '',
+            deliveryDate: data?.deliveryDate || data?.delivery_date || '',
+            pickupDate: data?.pickupDate || data?.pickup_date || data?.createdAt || '',
+            DiscountRequest: data?.DiscountRequest || null,
 
-      };
+          };
       console.log(normalized);
       
       setBooking(normalized);
@@ -203,6 +297,7 @@ export default function BookingDetailScreen() {
 
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -212,6 +307,34 @@ export default function BookingDetailScreen() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const formatDateOnly = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      // Handle ISO format (YYYY-MM-DD)
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
+      if (match) {
+        const [, year, month, day] = match;
+        const date = new Date(year, parseInt(month) - 1, day);
+        return date.toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
+      // Fallback to standard date formatting
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch {
+      return dateString;
+    }
   };
 
 
@@ -244,19 +367,133 @@ export default function BookingDetailScreen() {
   const handleSaveEdit = async () => {
     try {
       setUpdating(true);
+      
+      // Clear previous errors
+      const errors = {};
+      
+      // Validate required fields
+      const finalVehicleType = form.vehicleType === 'Other (please specify)' ? customVehicleType.trim() : form.vehicleType;
+      if (!finalVehicleType) {
+        errors.vehicleType = 'Vehicle type is required';
+      }
+      if (form.vehicleType === 'Other (please specify)' && finalVehicleType && finalVehicleType.length < 5) {
+        errors.vehicleType = 'Please specify a vehicle type (min 5 characters)';
+      }
+      
+      if (!form.cargoType) {
+        errors.cargoType = 'Cargo type is required';
+      }
+      
+      if (!form.cargoWeight) {
+        errors.cargoWeight = 'Cargo weight is required';
+      }
+      
+      if (!form.numContainers) {
+        errors.numContainers = 'Number of containers/vehicles is required';
+      }
+      
+      if (!form.pickupLocation) {
+        errors.pickupLocation = 'Pickup location is required';
+      }
+      
+      if (!form.dropLocation) {
+        errors.dropLocation = 'Drop location is required';
+      }
+      
+      if (!deliveryDate) {
+        errors.deliveryDate = 'Delivery date is required';
+      }
+      
+      // Date validation
+      if (deliveryDate && pickupDate) {
+        const pDate = new Date(pickupDate);
+        const dDate = new Date(deliveryDate);
+        if (dDate < pDate) {
+          errors.deliveryDate = 'Delivery date cannot be before booking date';
+        }
+      }
+      
+      // Number of containers validation
+      if (form.numContainers && Number(form.numContainers) > 100) {
+        errors.numContainers = 'You cannot enter more than 100 containers/vehicles';
+      }
+      
+      // If there are errors, set them and return
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        setUpdating(false);
+        return;
+      }
+      
+      // Clear errors if validation passes
+      setValidationErrors({});
+      
       // Prepare partials only for filled fields
       const payload = {};
       if (form.pickupLocation) payload.pickupLocation = form.pickupLocation;
       if (form.dropLocation) payload.dropLocation = form.dropLocation;
       if (form.cargoType) payload.cargoType = form.cargoType;
-      if (form.vehicleType) payload.vehicleType = form.vehicleType;
+      
+      // Handle vehicle type: use customVehicleType if "Other" is selected, otherwise use the selected type
+      if (finalVehicleType) payload.vehicleType = finalVehicleType;
       if (form.description) payload.description = form.description;
       if (form.cargoWeight !== '') payload.cargoWeight = form.cargoWeight;
       if (form.cargoSize) payload.cargoSize = form.cargoSize;
       if (form.budget !== '') payload.budget = form.budget;
+      if (form.numContainers) {
+        payload.numContainers = form.numContainers;
+        payload.numberOfVehicles = form.numContainers;
+      }
+      if (deliveryDate) payload.deliveryDate = deliveryDate;
+      payload.salesTax = form.salesTax;
  
-      await updateBooking(booking.id, payload);
+      // Update local booking state immediately (optimistic update)
+      setBooking(prev => ({
+        ...prev,
+        vehicleType: form.vehicleType || prev.vehicleType,
+        loadType: form.cargoType || prev.loadType,
+        fromLocation: form.pickupLocation || prev.fromLocation,
+        toLocation: form.dropLocation || prev.toLocation,
+        description: form.description !== undefined ? form.description : prev.description,
+        cargoWeight: form.cargoWeight || prev.cargoWeight,
+        cargoSize: form.cargoSize || prev.cargoSize,
+          budget: form.budget || prev.budget,
+          numContainers: form.numContainers || prev.numContainers,
+          deliveryDate: deliveryDate || prev.deliveryDate,
+          salesTax: form.salesTax !== undefined ? form.salesTax : prev.salesTax,
+        }));
+      
+      // Close modal first for better UX
       setEditVisible(false);
+      setPickupOptions([]);
+      setDropOptions([]);
+      
+      // Then update on server
+      const updatedData = await updateBooking(booking.id, payload);
+      
+      // If server returns updated data, use it; otherwise keep the optimistic update
+      if (updatedData) {
+        const normalized = {
+          id: updatedData?.id || updatedData?._id || booking.id,
+          vehicleType: updatedData?.vehicleType || form.vehicleType || booking.vehicleType,
+          loadType: updatedData?.cargoType || updatedData?.loadType || form.cargoType || booking.loadType,
+          fromLocation: updatedData?.pickupLocation || updatedData?.fromLocation || form.pickupLocation || booking.fromLocation,
+          toLocation: updatedData?.dropLocation || updatedData?.toLocation || form.dropLocation || booking.toLocation,
+          createdAt: updatedData?.createdAt || booking.createdAt,
+          status: updatedData?.status || booking.status,
+          description: updatedData?.description !== undefined ? updatedData.description : form.description !== undefined ? form.description : booking.description,
+          cargoWeight: updatedData?.cargoWeight || form.cargoWeight || booking.cargoWeight,
+          cargoSize: updatedData?.cargoSize || form.cargoSize || booking.cargoSize,
+          budget: updatedData?.budget || form.budget || booking.budget,
+          numContainers: updatedData?.numContainers || updatedData?.numberOfVehicles || form.numContainers || booking.numContainers,
+          deliveryDate: updatedData?.deliveryDate || updatedData?.delivery_date || deliveryDate || booking.deliveryDate,
+          pickupDate: updatedData?.pickupDate || updatedData?.pickup_date || updatedData?.createdAt || booking.pickupDate || booking.createdAt,
+          salesTax: updatedData?.salesTax !== undefined ? updatedData.salesTax : form.salesTax !== undefined ? form.salesTax : booking.salesTax,
+          DiscountRequest: updatedData?.DiscountRequest || booking.DiscountRequest,
+        };
+        setBooking(normalized);
+      }
+      
       Alert.alert('Updated', 'Your booking has been updated.');
     } catch (e) {
       Alert.alert('Error', e?.message || 'Failed to update booking.');
@@ -423,6 +660,225 @@ const openMaps = () => {
   Linking.openURL(url).catch(() => Alert.alert('Error', 'Unable to open Google Maps.'));
 };
 
+// Location autocomplete functions (same as book-truck.jsx)
+const fetchLocations = async (query, setOpts, setLoad) => {
+  if (!query || query.trim().length < 3) {
+    setOpts([]);
+    return;
+  }
+  setLoad(true);
+  
+  try {
+    // Try Google Places API first
+    const googleUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&types=geocode&components=country:pk&key=AIzaSyD3dYwbQlGyQlQWOOjY2u9RmyNYu-6rxWw`;
+    const googleResp = await fetch(googleUrl);
+    const googleData = await googleResp.json();
+    
+    if (googleData.status === 'OK' && googleData.predictions && googleData.predictions.length > 0) {
+      const opts = googleData.predictions.map((item) => ({
+        id: item.place_id,
+        label: item.description,
+        value: item.description,
+        placeId: item.place_id,
+      }));
+      setOpts(opts);
+      setLoad(false);
+      return;
+    }
+    
+    console.log("Google Places failed or no results, falling back to Nominatim");
+  } catch (googleError) {
+    console.log("Google Places error, falling back to Nominatim:", googleError);
+  }
+  
+  // Fallback to Nominatim if Google fails or returns no results
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=pk&limit=10&addressdetails=1`;
+    const resp = await fetch(
+      url, 
+      { headers: 
+        { 'Accept-Language': 'en', 
+          'User-Agent': 'Cargo360App/1.0 (contact: info@cargo360pk.com)',
+          'Referer': 'https://cargo360pk.com'
+        }
+      }
+    );
+    const data = await resp.json();
+    const opts = (Array.isArray(data) ? data : []).map((item) => ({
+      id: `${item.place_id}`,
+      label: item.display_name,
+      value: item.display_name,
+      lat: item.lat,
+      lon: item.lon,
+    }));
+    setOpts(opts);
+  } catch (_e) {
+    setOpts([]);
+    console.log("Nominatim error:", _e);
+  } finally {
+    setLoad(false);
+  }
+};
+
+const handlePickupLocationChange = (text) => {
+  setForm((s) => ({ ...s, pickupLocation: text }));
+  // Clear error when user types
+  if (validationErrors.pickupLocation) {
+    setValidationErrors(prev => ({ ...prev, pickupLocation: '' }));
+  }
+  if (pickupDebounceRef.current) clearTimeout(pickupDebounceRef.current);
+  pickupDebounceRef.current = setTimeout(() => {
+    fetchLocations(text, setPickupOptions, setPickupLoading);
+  }, 300);
+};
+
+const handleDropLocationChange = (text) => {
+  setForm((s) => ({ ...s, dropLocation: text }));
+  // Clear error when user types
+  if (validationErrors.dropLocation) {
+    setValidationErrors(prev => ({ ...prev, dropLocation: '' }));
+  }
+  if (dropDebounceRef.current) clearTimeout(dropDebounceRef.current);
+  dropDebounceRef.current = setTimeout(() => {
+    fetchLocations(text, setDropOptions, setDropLoading);
+  }, 300);
+};
+
+
+  // Date formatting functions (from book-truck.jsx)
+  const formatDateInput = (value) => {
+    const digits = value.replace(/[^\d/]/g, "");
+    
+    if (digits.length < value.length) {
+      return digits;
+    }
+
+    const numbers = digits.replace(/\D/g, "");
+    
+    if (numbers.length === 1) {
+      return numbers;
+    }
+    
+    const limited = numbers.slice(0, 8);
+    
+    let day = limited.slice(0, 2);
+    let month = limited.slice(2, 4);
+    let year = limited.slice(4, 8);
+
+    if (day.length === 2 && parseInt(day) > 31) day = "31";
+    if (day.length === 2 && parseInt(day) < 1) day = "01";
+
+    if (month.length === 2 && parseInt(month) > 12) month = "12";
+    if (month.length === 2 && parseInt(month) < 1) month = "01";
+
+    const currentYear = new Date().getFullYear();
+    const minYear = currentYear;
+    const maxYear = currentYear + 2;
+
+    if (year && year.length === 4) {
+      const parsedYear = parseInt(year);
+      
+      if (parsedYear < minYear || parsedYear > maxYear) {
+        year = String(currentYear);
+      }
+    }
+
+    let formatted = day;
+    
+    if (day.length === 2) {
+      formatted += "/";
+      
+      if (month) {
+        formatted += month;
+      }
+      
+      if (month.length === 2) {
+        formatted += "/";
+        
+        if (year) {
+          formatted += year;
+        }
+      }
+    }
+
+    return formatted;
+  };
+
+  const validateAndConvertDate = (formatted, setDateFunction) => {
+    const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(formatted);
+    if (match) {
+      const [, day, month, year] = match;
+      const d = parseInt(day, 10);
+      const m = parseInt(month, 10);
+      const y = parseInt(year, 10);
+
+      if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+        const iso = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        setDateFunction(iso);
+        return;
+      }
+    }
+    setDateFunction("");
+  };
+
+  const convertFormattedToISO = (formatted) => {
+    const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(formatted);
+    if (!match) return null;
+
+    const [, day, month, year] = match;
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatISOToDisplay = (isoDate) => {
+    if (!isoDate) return '';
+    try {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
+      if (match) {
+        const [, year, month, day] = match;
+        return `${day}/${month}/${year}`;
+      }
+      return isoDate;
+    } catch {
+      return isoDate;
+    }
+  };
+
+  const handleDeliveryDateChange = (text) => {
+    const formatted = formatDateInput(text);
+    setDeliveryDateDisplay(formatted);
+
+    // Convert to ISO (or empty)
+    validateAndConvertDate(formatted, setDeliveryDate);
+
+    // Clear error when user types
+    if (validationErrors.deliveryDate) {
+      setValidationErrors(prev => ({ ...prev, deliveryDate: '' }));
+    }
+
+    // Live validation: delivery must not be less than pickup
+    const deliveryISO = convertFormattedToISO(formatted);
+    if (deliveryISO && pickupDate) {
+      const pDate = new Date(pickupDate);
+      const dDate = new Date(deliveryISO);
+
+      if (dDate < pDate) {
+        setValidationErrors(prev => ({ ...prev, deliveryDate: 'Delivery date cannot be before booking date' }));
+      } else {
+        setValidationErrors(prev => ({ ...prev, deliveryDate: '' }));
+      }
+    }
+  };
+
+  // Handle modal close with cleanup
+  const handleCloseModal = () => {
+    setEditVisible(false);
+    setPickupOptions([]);
+    setDropOptions([]);
+    setValidationErrors({}); // Clear validation errors when closing modal
+    // Clear any pending debounce timeouts
+    if (pickupDebounceRef.current) clearTimeout(pickupDebounceRef.current);
+    if (dropDebounceRef.current) clearTimeout(dropDebounceRef.current);
+  };
 
   return (
     <ScrollView
@@ -448,8 +904,22 @@ const openMaps = () => {
       </View>
 
 
-      {/* Refresh button (right under nav) */}
-      <View style={styles.refreshContainer}>
+      {/* Buttons row - Edit on left, Refresh on right */}
+      <View style={styles.buttonsContainer}>
+        {/* Edit Button - Available for editable statuses */}
+        {!['delivered', 'completed', 'cancelled'].includes((booking.status || '').toLowerCase()) && (
+          <TouchableOpacity
+            onPress={() => setEditVisible(true)}
+            disabled={updating}
+            style={[styles.editButton, updating && styles.editButtonDisabled]}
+          >
+            <Text style={styles.editButtonText}>
+              {updating ? 'Updating...' : 'Edit Booking'}
+            </Text>
+          </TouchableOpacity>
+        )}
+        
+        {/* Refresh button */}
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={handleRefresh}
@@ -465,7 +935,6 @@ const openMaps = () => {
           )}
         </TouchableOpacity>
       </View>
-
 
       <View style={styles.content}>
         <View style={styles.statusSection}>
@@ -486,7 +955,6 @@ const openMaps = () => {
             </Text>
           </View>
         </View>
-
 
         <View style={styles.detailsCard}>
           <Text style={styles.cardTitle}>Vehicle & Load Information</Text>
@@ -525,7 +993,17 @@ const openMaps = () => {
 
           <View style={styles.detailRow}>
             <View style={styles.iconContainer}>
-              <ContainerIcon size={20} color="#01304e" />
+              <Truck size={20} color="#01304e" />
+            </View>
+            <View style={styles.detailContent}>
+              <Text style={styles.detailLabel}>No. of Containers/Vehicles</Text>
+              <Text style={styles.detailValue}>{booking.numContainers || booking.numberOfVehicles || 'N/A'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.detailRow}>
+            <View style={styles.iconContainer}>
+              <FileText size={20} color="#01304e" />
             </View>
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Sales Tax Invoice</Text>
@@ -586,6 +1064,18 @@ const openMaps = () => {
               <Text style={styles.detailValue}>{formatDate(booking.createdAt)}</Text>
             </View>
           </View>
+
+          {booking.deliveryDate && (
+            <View style={styles.detailRow}>
+              <View style={styles.iconContainer}>
+                <Calendar size={20} color="#01304e" />
+              </View>
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Delivery Date</Text>
+                <Text style={styles.detailValue}>{formatDateOnly(booking.deliveryDate)}</Text>
+              </View>
+            </View>
+          )}
         </View>
 
 
@@ -733,7 +1223,6 @@ const openMaps = () => {
           </View>
         )}
 
-
         {booking.status === 'Pending' && (
           <>
             <View style={styles.pendingInfo}>
@@ -743,17 +1232,6 @@ const openMaps = () => {
               </Text>
             </View>
             <View style={{ marginTop: 12, gap: 12 }}>
-              <TouchableOpacity
-                onPress={() => setEditVisible(true)}
-                disabled={updating}
-                style={{ backgroundColor: '#2563EB', opacity: updating ? 0.6 : 1, borderRadius: 8, paddingVertical: 12, alignItems: 'center' }}
-              >
-                <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>
-                  {updating ? 'Updating...' : 'Edit Booking'}
-                </Text>
-              </TouchableOpacity>
-
-
               <TouchableOpacity
                 onPress={handleCancelBooking}
                 disabled={cancelling}
@@ -778,32 +1256,340 @@ const openMaps = () => {
       )}
       </View>
       {/* Edit Modal */}
-      <Modal visible={editVisible} transparent animationType="slide" onRequestClose={() => setEditVisible(false)}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Edit Booking</Text>
+      <Modal visible={editVisible} transparent animationType="none" onRequestClose={handleCloseModal}>
+        <Animated.View 
+          style={[
+            styles.modalBackdrop,
+            {
+              opacity: modalOpacity,
+            }
+          ]}
+        >
+          <Animated.View 
+            style={[
+              styles.modalCard,
+              {
+                transform: [{ translateY: modalTranslateY }],
+              }
+            ]}
+          >
+            <LinearGradient
+              colors={['#01304e', '#ed8411']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.modalHeader}
+            >
+              <View style={styles.modalHeaderContent}>
+                <FontAwesome5 name="truck" size={20} color="#FFFFFF" solid style={{ marginRight: 8 }} />
+                <Text style={styles.modalTitle}>Edit Booking</Text>
+              </View>
+            </LinearGradient>
+            
+            <ScrollView style={styles.modalScrollView} contentContainerStyle={{ paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
+              {/* Delivery Date */}
+              <Text style={styles.modalLabel}>Delivery Date *</Text>
+              <TextInput
+                style={[styles.modalInput, validationErrors.deliveryDate && styles.modalInputError]}
+                value={deliveryDateDisplay}
+                onChangeText={handleDeliveryDateChange}
+                keyboardType="numeric"
+                placeholder="DD/MM/YYYY"
+                placeholderTextColor="#94A3B8"
+              />
+              {validationErrors.deliveryDate && (
+                <Text style={styles.modalErrorText}>{validationErrors.deliveryDate}</Text>
+              )}
 
+              {/* Vehicle Type */}
+              <Text style={styles.modalLabel}>Vehicle Type *</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.modalOptionsContainer}>
+                {[...vehicleTypes, 'Other (please specify)'].map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.modalOptionButton,
+                      form.vehicleType === type && styles.modalOptionButtonSelected
+                    ]}
+                    onPress={() => {
+                      setForm((s) => ({ ...s, vehicleType: type }));
+                      if (type !== 'Other (please specify)') setCustomVehicleType('');
+                      // Clear error when user selects
+                      if (validationErrors.vehicleType) {
+                        setValidationErrors(prev => ({ ...prev, vehicleType: '' }));
+                      }
+                    }}
+                  >
+                    <Text style={[
+                      styles.modalOptionText,
+                      form.vehicleType === type && styles.modalOptionTextSelected
+                    ]}>
+                      {type}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              {form.vehicleType === 'Other (please specify)' && (
+                <View style={{ marginTop: 8 }}>
+                  <TextInput 
+                    style={[styles.modalInput, validationErrors.vehicleType && styles.modalInputError]} 
+                    placeholder="Other vehicle type (min 5 characters)" 
+                    value={customVehicleType} 
+                    onChangeText={(t) => {
+                      setCustomVehicleType(t);
+                      // Clear error when user types
+                      if (validationErrors.vehicleType) {
+                        setValidationErrors(prev => ({ ...prev, vehicleType: '' }));
+                      }
+                    }}
+                    placeholderTextColor="#94A3B8"
+                  />
+                </View>
+              )}
+              {validationErrors.vehicleType && (
+                <Text style={styles.modalErrorText}>{validationErrors.vehicleType}</Text>
+              )}
 
-            <TextInput style={styles.modalInput} placeholder="Pickup Location" value={form.pickupLocation} onChangeText={(t) => setForm((s) => ({ ...s, pickupLocation: t }))} />
-            <TextInput style={styles.modalInput} placeholder="Drop Location" value={form.dropLocation} onChangeText={(t) => setForm((s) => ({ ...s, dropLocation: t }))} />
-            <TextInput style={styles.modalInput} placeholder="Cargo Type" value={form.cargoType} onChangeText={(t) => setForm((s) => ({ ...s, cargoType: t }))} />
-            <TextInput style={styles.modalInput} placeholder="Vehicle Type" value={form.vehicleType} onChangeText={(t) => setForm((s) => ({ ...s, vehicleType: t }))} />
-            <TextInput style={[styles.modalInput, { height: 80 }]} placeholder="Description" multiline value={form.description} onChangeText={(t) => setForm((s) => ({ ...s, description: t }))} />
-            <TextInput style={styles.modalInput} placeholder="Cargo Weight" keyboardType="numeric" value={form.cargoWeight} onChangeText={(t) => setForm((s) => ({ ...s, cargoWeight: t }))} />
-            <TextInput style={styles.modalInput} placeholder="Cargo Size" value={form.cargoSize} onChangeText={(t) => setForm((s) => ({ ...s, cargoSize: t }))} />
-            <TextInput style={styles.modalInput} placeholder="Budget" keyboardType="numeric" value={form.budget} onChangeText={(t) => setForm((s) => ({ ...s, budget: t }))} />
+              {/* Cargo Type */}
+              <Text style={styles.modalLabel}>Cargo Type *</Text>
+              <TextInput 
+                style={[styles.modalInput, validationErrors.cargoType && styles.modalInputError]} 
+                placeholder="Cargo Type" 
+                value={form.cargoType} 
+                onChangeText={(t) => {
+                  setForm((s) => ({ ...s, cargoType: t }));
+                  // Clear error when user types
+                  if (validationErrors.cargoType) {
+                    setValidationErrors(prev => ({ ...prev, cargoType: '' }));
+                  }
+                }} 
+              />
+              {validationErrors.cargoType && (
+                <Text style={styles.modalErrorText}>{validationErrors.cargoType}</Text>
+              )}
 
+              {/* Cargo Weight */}
+              <Text style={styles.modalLabel}>Cargo Weight (kg) *</Text>
+              <TextInput 
+                style={[styles.modalInput, validationErrors.cargoWeight && styles.modalInputError]} 
+                placeholder="Cargo Weight in kg" 
+                keyboardType="numeric" 
+                value={form.cargoWeight} 
+                onChangeText={(t) => {
+                  setForm((s) => ({ ...s, cargoWeight: t }));
+                  // Clear error when user types
+                  if (validationErrors.cargoWeight) {
+                    setValidationErrors(prev => ({ ...prev, cargoWeight: '' }));
+                  }
+                }} 
+              />
+              {validationErrors.cargoWeight && (
+                <Text style={styles.modalErrorText}>{validationErrors.cargoWeight}</Text>
+              )}
 
-            <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
-              <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#64748B' }]} onPress={() => setEditVisible(false)}>
+              {/* No. of Containers/Vehicles */}
+              <Text style={styles.modalLabel}>No. of Containers/Vehicles *</Text>
+              <TextInput 
+                style={[styles.modalInput, (validationErrors.numContainers || (form.numContainers !== '' && Number(form.numContainers) > 100)) && styles.modalInputError]} 
+                placeholder="numbers of containers/vehicles" 
+                keyboardType="numeric" 
+                value={form.numContainers} 
+                onChangeText={(t) => {
+                  // Allow only digits
+                  const cleaned = t.replace(/[^0-9]/g, '');
+                  setForm((s) => ({ ...s, numContainers: cleaned }));
+                  // Clear error when user types
+                  if (validationErrors.numContainers) {
+                    setValidationErrors(prev => ({ ...prev, numContainers: '' }));
+                  }
+                }}
+                placeholderTextColor="#94A3B8"
+              />
+              {(validationErrors.numContainers || (form.numContainers !== '' && Number(form.numContainers) > 100)) && (
+                <Text style={styles.modalErrorText}>
+                  {validationErrors.numContainers || 'You cannot enter more than 100 containers/vehicles.'}
+                </Text>
+              )}
+
+              {/* Sales Tax Invoice */}
+              <Text style={styles.modalLabel}>Sales Tax Invoice</Text>
+              <Pressable
+                onPress={() => setForm((s) => ({ ...s, salesTax: !s.salesTax }))}
+                style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}
+              >
+                <View
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderWidth: 2,
+                    borderColor: '#64748B',
+                    borderRadius: 4,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: form.salesTax ? '#01304e' : 'transparent',
+                  }}
+                >
+                  {form.salesTax && <Text style={{ color: 'white', fontWeight: 'bold' }}>✓</Text>}
+                </View>
+                <Text style={{ marginLeft: 8, color: '#334155', fontSize: 15 }}>
+                  Sales Tax Invoice
+                </Text>
+              </Pressable>
+
+              {/* Additional Details */}
+              <Text style={styles.modalLabel}>Additional Details</Text>
+              <TextInput 
+                style={[styles.modalInput, { height: 80 }]} 
+                placeholder="Describe your cargo in detail..." 
+                multiline 
+                value={form.description} 
+                onChangeText={(t) => setForm((s) => ({ ...s, description: t }))} 
+                textAlignVertical="top"
+              />
+
+              {/* Route Information */}
+              <Text style={styles.modalLabel}>Route Information</Text>
+              
+              {/* Pickup Location with Autocomplete */}
+              <Text style={styles.modalSubLabel}>Pickup Location *</Text>
+              <View style={{ position: 'relative', marginBottom: 12 }}>
+                <View style={[styles.modalInputContainer, validationErrors.pickupLocation && { borderColor: '#DC2626' }]}>
+                  <MapPin size={16} color="#64748B" style={{ marginRight: 8, marginTop: 2 }} />
+                  <TextInput 
+                    style={[styles.modalInput, { borderWidth: 0, padding: 0, flex: 1 }]} 
+                    placeholder="Search for pickup location..." 
+                    value={form.pickupLocation} 
+                    onChangeText={handlePickupLocationChange}
+                    placeholderTextColor="#94A3B8"
+                  />
+                  {form.pickupLocation.length > 0 && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setForm((s) => ({ ...s, pickupLocation: '' }));
+                        setPickupOptions([]);
+                        if (pickupDebounceRef.current) clearTimeout(pickupDebounceRef.current);
+                        // Clear error when cleared
+                        if (validationErrors.pickupLocation) {
+                          setValidationErrors(prev => ({ ...prev, pickupLocation: '' }));
+                        }
+                      }}
+                      style={{ padding: 4 }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <X size={18} color="#64748B" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {(pickupLoading || pickupOptions.length > 0) && (
+                  <View style={styles.modalDropdown}>
+                    {pickupLoading ? (
+                      <Text style={styles.modalDropdownHint}>Searching locations...</Text>
+                    ) : (
+                      <ScrollView style={styles.modalDropdownScroll} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+                        {pickupOptions.map((opt) => (
+                          <TouchableOpacity
+                            key={opt.id}
+                            style={styles.modalDropdownItem}
+                            onPress={() => {
+                              setForm((s) => ({ ...s, pickupLocation: opt.value }));
+                              setPickupOptions([]);
+                              // Clear error when location is selected
+                              if (validationErrors.pickupLocation) {
+                                setValidationErrors(prev => ({ ...prev, pickupLocation: '' }));
+                              }
+                            }}
+                          >
+                            <Text style={styles.modalDropdownText}>{opt.label}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    )}
+                    {!pickupLoading && pickupOptions.length === 0
+                      && form.pickupLocation.trim().length > 0 && form.pickupLocation.trim().length < 3 && (
+                      <Text style={styles.modalDropdownHint}>Type at least 3 characters to search...</Text>
+                    )}
+                  </View>
+                )}
+                {validationErrors.pickupLocation && (
+                  <Text style={[styles.modalErrorText, { marginTop: 4, marginBottom: 8 }]}>{validationErrors.pickupLocation}</Text>
+                )}
+              </View>
+              
+              {/* Drop Location with Autocomplete */}
+              <Text style={styles.modalSubLabel}>Drop Location *</Text>
+              <View style={{ position: 'relative', marginBottom: 12 }}>
+                <View style={[styles.modalInputContainer, validationErrors.dropLocation && { borderColor: '#DC2626' }]}>
+                  <MapPin size={16} color="#64748B" style={{ marginRight: 8, marginTop: 2 }} />
+                  <TextInput 
+                    style={[styles.modalInput, { borderWidth: 0, padding: 0, flex: 1 }]} 
+                    placeholder="Search for delivery location..." 
+                    value={form.dropLocation} 
+                    onChangeText={handleDropLocationChange}
+                    placeholderTextColor="#94A3B8"
+                  />
+                  {form.dropLocation.length > 0 && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setForm((s) => ({ ...s, dropLocation: '' }));
+                        setDropOptions([]);
+                        if (dropDebounceRef.current) clearTimeout(dropDebounceRef.current);
+                        // Clear error when cleared
+                        if (validationErrors.dropLocation) {
+                          setValidationErrors(prev => ({ ...prev, dropLocation: '' }));
+                        }
+                      }}
+                      style={{ padding: 4 }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <X size={18} color="#64748B" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {(dropLoading || dropOptions.length > 0) && (
+                  <View style={styles.modalDropdown}>
+                    {dropLoading ? (
+                      <Text style={styles.modalDropdownHint}>Searching locations...</Text>
+                    ) : (
+                      <ScrollView style={styles.modalDropdownScroll} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+                        {dropOptions.map((opt) => (
+                          <TouchableOpacity
+                            key={opt.id}
+                            style={styles.modalDropdownItem}
+                            onPress={() => {
+                              setForm((s) => ({ ...s, dropLocation: opt.value }));
+                              setDropOptions([]);
+                              // Clear error when location is selected
+                              if (validationErrors.dropLocation) {
+                                setValidationErrors(prev => ({ ...prev, dropLocation: '' }));
+                              }
+                            }}
+                          >
+                            <Text style={styles.modalDropdownText}>{opt.label}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    )}
+                    {!dropLoading && dropOptions.length === 0
+                      && form.dropLocation.trim().length > 0 && form.dropLocation.trim().length < 3 && (
+                      <Text style={styles.modalDropdownHint}>Type at least 3 characters to search...</Text>
+                    )}
+                  </View>
+                )}
+                {validationErrors.dropLocation && (
+                  <Text style={[styles.modalErrorText, { marginTop: 4, marginBottom: 8 }]}>{validationErrors.dropLocation}</Text>
+                )}
+              </View>
+            </ScrollView>
+
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 8, paddingHorizontal: 16, paddingBottom: 16 }}>
+              <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#64748B' }]} onPress={handleCloseModal}>
                 <Text style={styles.modalButtonText}>Close</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#2563EB' }]} onPress={handleSaveEdit} disabled={updating}>
                 <Text style={styles.modalButtonText}>{updating ? 'Saving...' : 'Save'}</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </Animated.View>
+        </Animated.View>
       </Modal>
       {/* Driver Location Modal */}
       <Modal visible={locVisible} transparent animationType="slide" onRequestClose={() => setLocVisible(false)}>
@@ -1164,19 +1950,30 @@ const styles = StyleSheet.create({
   modalCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 16,
+    padding: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
     elevation: 8,
     width: '100%',
+    maxHeight: '90%',
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    marginBottom: 0,
+  },
+  modalHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#01304e',
-    marginBottom: 12,
+    color: '#FFFFFF',
+    textAlign: 'left',
   },
   modalInput: {
     borderWidth: 2,
@@ -1187,6 +1984,61 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: '#333333',
     backgroundColor: '#FFFFFF',
+  },
+  modalInputError: {
+    borderColor: '#DC2626',
+  },
+  modalInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    marginBottom: 10,
+  },
+  modalDropdown: {
+    position: 'absolute',
+    top: 50,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#01304e',
+    borderRadius: 8,
+    zIndex: 1000,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    maxHeight: 200,
+  },
+  modalDropdownScroll: {
+    maxHeight: 200,
+  },
+  modalDropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  modalDropdownText: {
+    fontSize: 14,
+    color: '#333333',
+  },
+  modalDropdownHint: {
+    padding: 10,
+    fontSize: 12,
+    color: '#777777',
+  },
+  modalErrorText: {
+    color: '#DC2626',
+    fontSize: 13,
+    marginTop: 6,
+    marginLeft: 4,
   },
   modalButton: {
     flex: 1,
@@ -1203,27 +2055,106 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
   },
+  modalScrollView: {
+    maxHeight: 400,
+  },
+  modalLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#01304e',
+    marginBottom: 8,
+    marginTop: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  modalSubLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748B',
+    marginBottom: 6,
+    marginTop: 4,
+  },
+  modalOptionsContainer: {
+    marginBottom: 8,
+  },
+  modalOptionButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginRight: 12,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  modalOptionButtonSelected: {
+    backgroundColor: '#01304e',
+    borderColor: '#01304e',
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  modalOptionText: {
+    fontSize: 14,
+    color: '#777777',
+    fontWeight: '500',
+  },
+  modalOptionTextSelected: {
+    color: '#FFFFFF',
+  },
+  editButton: {
+    backgroundColor: '#2563EB',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  editButtonDisabled: {
+    opacity: 0.6,
+  },
+  editButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 15,
+  },
 
 
   /* ---------- ADDED STYLES for refresh btn---------- */
-  refreshContainer: {
-    alignItems: 'flex-end',
+  buttonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 24,
     marginTop: 1,
     marginBottom: 17,
+    gap: 12,
   },
   refreshButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ed8411',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 8,
     gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   refreshText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   /* ---------- end added styles ---------- */
