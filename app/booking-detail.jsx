@@ -45,7 +45,14 @@ export default function BookingDetailScreen() {
   const [editError, setEditError] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [cancelReasonModalVisible, setCancelReasonModalVisible] = useState(false);
+  const [selectedCancelReason, setSelectedCancelReason] = useState('');
+  const [customCancelReason, setCustomCancelReason] = useState('');
   const [editVisible, setEditVisible] = useState(false);
+  
+  // Cancel reason modal animation values
+  const cancelModalOpacity = useRef(new Animated.Value(0)).current;
+  const cancelModalTranslateY = useRef(new Animated.Value(50)).current;
   const [customVehicleType, setCustomVehicleType] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
   const [deliveryDateDisplay, setDeliveryDateDisplay] = useState('');
@@ -211,6 +218,32 @@ export default function BookingDetailScreen() {
     }
   }, [booking]);
 
+  // Sync booking state with context when bookingFromContext changes
+  useEffect(() => {
+    if (bookingFromContext) {
+      const normalized = {
+        id: bookingFromContext.id || bookingFromContext._id,
+        vehicleType: bookingFromContext.vehicleType,
+        loadType: bookingFromContext.cargoType || bookingFromContext.loadType,
+        fromLocation: bookingFromContext.pickupLocation || bookingFromContext.fromLocation,
+        toLocation: bookingFromContext.dropLocation || bookingFromContext.toLocation,
+        createdAt: bookingFromContext.createdAt,
+        status: bookingFromContext.status || 'Pending',
+        description: bookingFromContext.description,
+        cargoWeight: bookingFromContext.cargoWeight,
+        salesTax: bookingFromContext.salesTax,
+        cargoSize: bookingFromContext.cargoSize,
+        budget: bookingFromContext.budget,
+        numContainers: bookingFromContext.numContainers || bookingFromContext.numberOfVehicles || '',
+        deliveryDate: bookingFromContext.deliveryDate || bookingFromContext.delivery_date || '',
+        pickupDate: bookingFromContext.pickupDate || bookingFromContext.pickup_date || bookingFromContext.createdAt || '',
+        DiscountRequest: bookingFromContext.DiscountRequest || null,
+      };
+      // Update booking state with context data
+      setBooking(normalized);
+    }
+  }, [bookingFromContext]);
+
   // Modal animation effect
   useEffect(() => {
     if (editVisible) {
@@ -244,6 +277,42 @@ export default function BookingDetailScreen() {
       ]).start();
     }
   }, [editVisible, modalOpacity, modalTranslateY]);
+
+  // Cancel reason modal animation effect
+  useEffect(() => {
+    if (cancelReasonModalVisible) {
+      // Reset values before animating in
+      cancelModalOpacity.setValue(0);
+      cancelModalTranslateY.setValue(50);
+      
+      Animated.parallel([
+        Animated.timing(cancelModalOpacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(cancelModalTranslateY, {
+          toValue: 0,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(cancelModalOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cancelModalTranslateY, {
+          toValue: 50,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [cancelReasonModalVisible]);
 
 
   // ---------- ADDED: handleRefresh used by both pull-to-refresh and the button ----------
@@ -377,24 +446,113 @@ export default function BookingDetailScreen() {
       Alert.alert('Not allowed', 'This booking cannot be cancelled.');
       return;
     }
-    Alert.alert('Cancel booking?', 'Are you sure you want to cancel this booking?', [
-      { text: 'No' },
-      {
-        text: 'Yes, cancel',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            setCancelling(true);
-            await cancelBooking(booking.id);
-            Alert.alert('Cancelled', 'Your booking has been cancelled.');
-          } catch (e) {
-            Alert.alert('Error', e?.message || 'Failed to cancel booking.');
-          } finally {
-            setCancelling(false);
-          }
-        },
-      },
-    ]);
+    // Open cancel reason modal
+    setCancelReasonModalVisible(true);
+    setSelectedCancelReason('');
+    setCustomCancelReason('');
+  };
+
+  const handleSubmitCancelReason = async () => {
+    // Validate that a reason is selected or custom reason is entered
+    if (!selectedCancelReason) {
+      Alert.alert('Required', 'Please select a cancellation reason.');
+      return;
+    }
+
+    if (selectedCancelReason === 'Others' && !customCancelReason.trim()) {
+      Alert.alert('Required', 'Please enter your cancellation reason.');
+      return;
+    }
+
+    try {
+      setCancelling(true);
+      
+      // Prepare cancel reason
+      const cancelReason = selectedCancelReason === 'Others' 
+        ? customCancelReason.trim() 
+        : selectedCancelReason;
+      
+      // Optimistically update booking status immediately (do this first!)
+      setBooking(prev => {
+        if (!prev) return null;
+        console.log('Optimistically updating status to Cancelled');
+        return { ...prev, status: 'Cancelled' };
+      });
+      
+      // Close modal
+      setCancelReasonModalVisible(false);
+      
+      // Call cancelBooking with reason (this will refresh bookings in context)
+      await cancelBooking(booking.id, cancelReason);
+      
+      // Refresh booking data from server to ensure we have the latest status
+      const updatedBooking = await getBookingById(booking.id);
+      if (updatedBooking) {
+        const normalized = {
+          id: updatedBooking?.id || updatedBooking?._id,
+          vehicleType: updatedBooking?.vehicleType,
+          loadType: updatedBooking?.cargoType || updatedBooking?.loadType,
+          fromLocation: updatedBooking?.pickupLocation || updatedBooking?.fromLocation,
+          toLocation: updatedBooking?.dropLocation || updatedBooking?.toLocation,
+          createdAt: updatedBooking?.createdAt,
+          status: updatedBooking?.status || 'Cancelled',
+          description: updatedBooking?.description,
+          cargoWeight: updatedBooking?.cargoWeight,
+          cargoSize: updatedBooking?.cargoSize,
+          budget: updatedBooking?.budget,
+          salesTax: updatedBooking?.salesTax || false,
+          numContainers: updatedBooking?.numContainers || updatedBooking?.numberOfVehicles || '',
+          deliveryDate: updatedBooking?.deliveryDate || updatedBooking?.delivery_date || '',
+          pickupDate: updatedBooking?.pickupDate || updatedBooking?.pickup_date || updatedBooking?.createdAt || '',
+          DiscountRequest: updatedBooking?.DiscountRequest || null,
+        };
+        setBooking(normalized);
+      }
+      
+      Alert.alert('Cancelled', 'Your booking has been cancelled.');
+      
+      // Reset form
+      setSelectedCancelReason('');
+      setCustomCancelReason('');
+    } catch (e) {
+      // On error, revert by fetching current booking state
+      try {
+        const currentBooking = await getBookingById(booking.id);
+        if (currentBooking) {
+          const normalized = {
+            id: currentBooking?.id || currentBooking?._id,
+            vehicleType: currentBooking?.vehicleType,
+            loadType: currentBooking?.cargoType || currentBooking?.loadType,
+            fromLocation: currentBooking?.pickupLocation || currentBooking?.fromLocation,
+            toLocation: currentBooking?.dropLocation || currentBooking?.toLocation,
+            createdAt: currentBooking?.createdAt,
+            status: currentBooking?.status || 'Pending',
+            description: currentBooking?.description,
+            cargoWeight: currentBooking?.cargoWeight,
+            cargoSize: currentBooking?.cargoSize,
+            budget: currentBooking?.budget,
+            salesTax: currentBooking?.salesTax || false,
+            numContainers: currentBooking?.numContainers || currentBooking?.numberOfVehicles || '',
+            deliveryDate: currentBooking?.deliveryDate || currentBooking?.delivery_date || '',
+            pickupDate: currentBooking?.pickupDate || currentBooking?.pickup_date || currentBooking?.createdAt || '',
+            DiscountRequest: currentBooking?.DiscountRequest || null,
+          };
+          setBooking(normalized);
+        }
+      } catch (revertError) {
+        console.log('Error reverting booking:', revertError);
+      }
+      Alert.alert('Error', e?.message || 'Failed to cancel booking.');
+      setCancelReasonModalVisible(true); // Reopen modal on error
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleCloseCancelReasonModal = () => {
+    setCancelReasonModalVisible(false);
+    setSelectedCancelReason('');
+    setCustomCancelReason('');
   };
  
   const handleSaveEdit = async () => {
@@ -1232,6 +1390,19 @@ const handleDropLocationChange = (text) => {
           )}
         </View>
 
+        {/* Cancel Booking Button - Show for cancellable bookings */}
+        {!['delivered', 'completed', 'cancelled'].includes((booking?.status || '').toLowerCase()) && (
+          <TouchableOpacity
+            onPress={handleCancelBooking}
+            disabled={cancelling}
+            style={[styles.cancelBookingButton, cancelling && styles.cancelBookingButtonDisabled]}
+          >
+            <Text style={styles.cancelBookingButtonText}>
+              {cancelling ? 'Cancelling...' : 'Cancel Booking'}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         {/* Confirmation Button - Only show if budget exists and status is pending or assigned */}
         {booking.budget && ['pending', 'assigned'].includes((booking.status || '').toLowerCase()) && (
           <View style={styles.confirmationSection}>
@@ -1716,6 +1887,149 @@ const handleDropLocationChange = (text) => {
           </View>
         </View>
       </Modal>
+
+      {/* Cancel Reason Modal */}
+      <Modal 
+        visible={cancelReasonModalVisible} 
+        transparent 
+        animationType="none" 
+        onRequestClose={handleCloseCancelReasonModal}
+      >
+        <Animated.View 
+          style={[
+            styles.modalBackdrop,
+            {
+              opacity: cancelModalOpacity,
+            }
+          ]}
+        >
+          <Pressable 
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} 
+            onPress={handleCloseCancelReasonModal}
+          />
+          <Pressable onStartShouldSetResponder={() => true}>
+          <Animated.View 
+            style={[
+              styles.modalCard, 
+              styles.cancelModalCard,
+              { 
+                transform: [{ translateY: cancelModalTranslateY }],
+                maxHeight: '90%',
+              }
+            ]}
+          >
+            <LinearGradient
+              colors={['#01304e', '#ed8411']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cancelModalHeader}
+            >
+              <View style={styles.modalHeaderContent}>
+                <FontAwesome5 name="times-circle" size={22} color="#FFFFFF" solid style={{ marginRight: 10 }} />
+                <Text style={styles.cancelModalHeaderTitle}>Cancel Booking</Text>
+              </View>
+            </LinearGradient>
+
+            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+              <Text style={styles.cancelModalTitle}>Why are you cancelling this booking?</Text>
+              <Text style={styles.modalSubLabel}>Please select a reason for cancellation *</Text>
+
+              {/* Cancel Reason Options */}
+              <View style={styles.cancelReasonOptionsContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.cancelReasonOption,
+                    selectedCancelReason === 'Not satisfied with the rates' && styles.cancelReasonOptionSelected
+                  ]}
+                  onPress={() => {
+                    setSelectedCancelReason('Not satisfied with the rates');
+                    setCustomCancelReason('');
+                  }}
+                >
+                  <Text style={[
+                    styles.cancelReasonOptionText,
+                    selectedCancelReason === 'Not satisfied with the rates' && styles.cancelReasonOptionTextSelected
+                  ]}>
+                    Not satisfied with the rates
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.cancelReasonOption,
+                    selectedCancelReason === "Don't need Booking anymore" && styles.cancelReasonOptionSelected
+                  ]}
+                  onPress={() => {
+                    setSelectedCancelReason("Don't need Booking anymore");
+                    setCustomCancelReason('');
+                  }}
+                >
+                  <Text style={[
+                    styles.cancelReasonOptionText,
+                    selectedCancelReason === "Don't need Booking anymore" && styles.cancelReasonOptionTextSelected
+                  ]}>
+                    Don't need Booking anymore
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.cancelReasonOption,
+                    selectedCancelReason === 'Others' && styles.cancelReasonOptionSelected
+                  ]}
+                  onPress={() => {
+                    setSelectedCancelReason('Others');
+                  }}
+                >
+                  <Text style={[
+                    styles.cancelReasonOptionText,
+                    selectedCancelReason === 'Others' && styles.cancelReasonOptionTextSelected
+                  ]}>
+                    Others
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Custom Reason Input - Show when "Others" is selected */}
+              {selectedCancelReason === 'Others' && (
+                <View style={styles.customReasonContainer}>
+                  <Text style={styles.customReasonLabel}>Please specify your reason *</Text>
+                  <TextInput
+                    style={styles.customReasonInput}
+                    placeholder="Enter your cancellation reason"
+                    placeholderTextColor="#94A3B8"
+                    multiline
+                    numberOfLines={4}
+                    value={customCancelReason}
+                    onChangeText={setCustomCancelReason}
+                    textAlignVertical="top"
+                  />
+                </View>
+              )}
+
+              {/* Action Buttons */}
+              <View style={styles.cancelModalActions}>
+                <TouchableOpacity
+                  style={styles.cancelModalButtonSecondary}
+                  onPress={handleCloseCancelReasonModal}
+                >
+                  <Text style={styles.cancelModalButtonSecondaryText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.cancelModalButtonPrimary, cancelling && styles.cancelModalButtonDisabled]}
+                  onPress={handleSubmitCancelReason}
+                  disabled={cancelling}
+                >
+                  <Text style={styles.cancelModalButtonPrimaryText}>
+                    {cancelling ? 'Cancelling...' : 'Confirm'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </Animated.View>
+          </Pressable>
+        </Animated.View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -2031,6 +2345,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  modalHeaderGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -2117,6 +2435,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
   },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
   modalScrollView: {
     maxHeight: 400,
   },
@@ -2134,7 +2460,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#64748B',
     marginBottom: 6,
-    marginTop: 4,
+    marginTop: -2,
   },
   modalOptionsContainer: {
     marginBottom: 8,
@@ -2167,6 +2493,134 @@ const styles = StyleSheet.create({
   },
   modalOptionTextSelected: {
     color: '#FFFFFF',
+  },
+  modalContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  // Cancel Modal Specific Styles
+  cancelModalHeader: {
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  cancelModalHeaderTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'left',
+    letterSpacing: 0.3,
+  },
+  cancelModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  cancelReasonOptionsContainer: {
+    marginTop: 16,
+    marginBottom: 20,
+    gap: 12,
+  },
+  cancelReasonOption: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  cancelReasonOptionSelected: {
+    backgroundColor: '#01304e',
+    borderColor: '#01304e',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  cancelReasonOptionText: {
+    fontSize: 15,
+    color: '#475569',
+    fontWeight: '500',
+  },
+  cancelReasonOptionTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  customReasonContainer: {
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  customReasonLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+    marginBottom: 8,
+  },
+  customReasonInput: {
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: '#1E293B',
+    backgroundColor: '#FFFFFF',
+    fontSize: 15,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  cancelModalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+    paddingTop: 20,
+    paddingVertical: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  cancelModalButtonSecondary: {
+    flex: 1,
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+  },
+  cancelModalButtonSecondaryText: {
+    color: '#475569',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  cancelModalButtonPrimary: {
+    flex: 1,
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: '#DC2626',
+    shadowColor: '#DC2626',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cancelModalButtonPrimaryText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  cancelModalButtonDisabled: {
+    opacity: 0.6,
+  },
+  cancelModalCard: {
+    width: '90%',
+    maxWidth: 400,
   },
   editButton: {
     backgroundColor: '#2563EB',
@@ -2375,6 +2829,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   /* ---------- end Pricing & Discount Request Styles ---------- */
+
+  /* ---------- Cancel Booking Button Styles ---------- */
+  cancelBookingButton: {
+    backgroundColor: '#DC2626',
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  cancelBookingButtonDisabled: {
+    opacity: 0.6,
+  },
+  cancelBookingButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  /* ---------- end Cancel Booking Button Styles ---------- */
 
   /* ---------- Confirmation Section Styles ---------- */
   confirmationSection: {

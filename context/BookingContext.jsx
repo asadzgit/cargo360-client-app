@@ -152,8 +152,9 @@ export function BookingProvider({ children }) {
     return value;
   }
 
-  async function cancelBooking(id) {
-    const resp = await bookingAPI.cancel(id);
+  async function cancelBooking(id, reason) {
+    const payload = reason ? { cancelReason: reason } : {};
+    const resp = await bookingAPI.cancel(id, payload);
     await fetchBookings(undefined, { force: true });
     const raw = resp?.data;
     const value = raw?.data ?? raw;
