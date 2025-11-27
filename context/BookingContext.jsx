@@ -138,6 +138,22 @@ export function BookingProvider({ children }) {
     return value;
   }
 
+  async function updateBooking(id, payload) {
+    const resp = await bookingAPI.update(id, payload);
+    await fetchBookings(undefined, { force: true });
+    const raw = resp?.data;
+    const value = raw?.data ?? raw;
+    return value;
+  }
+
+  async function cancelBooking(id) {
+    const resp = await bookingAPI.cancel(id);
+    await fetchBookings(undefined, { force: true });
+    const raw = resp?.data;
+    const value = raw?.data ?? raw;
+    return value;
+  }
+
   const value = useMemo(() => ({
     user,
     bookings,
@@ -149,6 +165,8 @@ export function BookingProvider({ children }) {
     fetchBookings,
     addBooking,
     getBookingById,
+    updateBooking,
+    cancelBooking,
   }), [user, bookings, loading, authReady]);
 
   return (
