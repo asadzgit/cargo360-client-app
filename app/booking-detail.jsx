@@ -183,7 +183,18 @@ export default function BookingDetailScreen() {
       });
       
       // Set delivery date
-      const deliveryDateISO = booking.deliveryDate || booking.delivery_date || '';
+      const deliveryDateRaw = booking.deliveryDate || booking.delivery_date || '';
+      // Convert DD/MM/YYYY to ISO format if needed
+      let deliveryDateISO = deliveryDateRaw;
+      if (deliveryDateRaw) {
+        // Check if it's in DD/MM/YYYY format
+        const ddmmyyyyMatch = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(deliveryDateRaw);
+        if (ddmmyyyyMatch) {
+          const [, day, month, year] = ddmmyyyyMatch;
+          deliveryDateISO = `${year}-${month}-${day}`;
+        }
+        // If already in ISO format (YYYY-MM-DD), use as is
+      }
       setDeliveryDate(deliveryDateISO);
       setDeliveryDateDisplay(formatISOToDisplay(deliveryDateISO));
       
@@ -251,16 +262,16 @@ export default function BookingDetailScreen() {
         status: data?.status || 'Pending',
         description: data?.description,
         cargoWeight: data?.cargoWeight,
-            cargoSize: data?.cargoSize,
-            budget: data?.budget,
-            // insurance: data?.insurance || false,
-            salesTax: data?.salesTax || false,
+        cargoSize: data?.cargoSize,
+        budget: data?.budget,
+        // insurance: data?.insurance || false,
+        salesTax: data?.salesTax || false,
             numContainers: data?.numContainers || data?.numberOfVehicles || '',
             deliveryDate: data?.deliveryDate || data?.delivery_date || '',
             pickupDate: data?.pickupDate || data?.pickup_date || data?.createdAt || '',
-            DiscountRequest: data?.DiscountRequest || null,
+        DiscountRequest: data?.DiscountRequest || null,
 
-          };
+      };
       console.log(normalized);
       
       setBooking(normalized);
@@ -312,28 +323,50 @@ export default function BookingDetailScreen() {
   const formatDateOnly = (dateString) => {
     if (!dateString) return 'N/A';
     try {
-      // Handle ISO format (YYYY-MM-DD)
-      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
-      if (match) {
-        const [, year, month, day] = match;
-        const date = new Date(year, parseInt(month) - 1, day);
-        return date.toLocaleDateString('en-US', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        });
+      let date;
+      
+      // Clean the date string (trim whitespace)
+      const cleaned = String(dateString).trim();
+      
+      // Handle DD/MM/YYYY format first (what the API returns)
+      const ddmmyyyyMatch = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(cleaned);
+      if (ddmmyyyyMatch) {
+        const [, day, month, year] = ddmmyyyyMatch;
+        date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      } else {
+        // Handle ISO format (YYYY-MM-DD)
+        const isoMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(cleaned);
+        if (isoMatch) {
+          const [, year, month, day] = isoMatch;
+          date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        } else {
+          // Fallback to standard date parsing
+          date = new Date(cleaned);
+        }
       }
-      // Fallback to standard date formatting
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
+      
+      // Validate the date
+      if (isNaN(date.getTime())) {
+        return 'N/A';
+      }
+      
+      // Format the date
+      const formatted = date.toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       });
-    } catch {
-      return dateString;
+      
+      // Check if formatted is valid
+      if (!formatted || formatted === 'Invalid Date' || formatted.includes('Invalid')) {
+        return 'N/A';
+      }
+      
+      return formatted;
+    } catch (error) {
+      console.error('Error formatting date:', error, dateString);
+      return 'N/A';
     }
   };
 
@@ -444,7 +477,32 @@ export default function BookingDetailScreen() {
         payload.numContainers = form.numContainers;
         payload.numberOfVehicles = form.numContainers;
       }
-      if (deliveryDate) payload.deliveryDate = deliveryDate;
+      if (deliveryDate) {
+        // Convert DD/MM/YYYY to ISO format (YYYY-MM-DD) if needed
+        let isoDate = deliveryDate;
+        const dateStr = String(deliveryDate).trim();
+        
+        // Check if it's in DD/MM/YYYY format
+        const ddmmyyyyMatch = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(dateStr);
+        if (ddmmyyyyMatch) {
+          const [, day, month, year] = ddmmyyyyMatch;
+          isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        } else {
+          // Check if it's already in ISO format (YYYY-MM-DD)
+          const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+          if (!isoMatch) {
+            // If it's not in a recognized format, try to parse it as a date and convert
+            const parsedDate = new Date(dateStr);
+            if (!isNaN(parsedDate.getTime())) {
+              const year = parsedDate.getFullYear();
+              const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+              const day = String(parsedDate.getDate()).padStart(2, '0');
+              isoDate = `${year}-${month}-${day}`;
+            }
+          }
+        }
+        payload.deliveryDate = isoDate;
+      }
       payload.salesTax = form.salesTax;
  
       // Update local booking state immediately (optimistic update)
@@ -1081,7 +1139,11 @@ const handleDropLocationChange = (text) => {
 
         {/* Pricing & Budget Section */}
         <View style={styles.pricingCard}>
-          <Text style={styles.cardTitle}>Pricing</Text>
+          <View style={styles.pricingHeaderContainer}>
+            <FontAwesome5 name="money-bill" size={20} color="#FFFFFF" solid style={{ marginRight: 8 }} />
+            <Text style={styles.pricingCardTitle}>Pricing</Text>
+          </View>
+          <View style={styles.pricingHeaderBorder} />
 
           {/* No Budget Set */}
           {!booking.budget && (
@@ -1281,7 +1343,7 @@ const handleDropLocationChange = (text) => {
             >
               <View style={styles.modalHeaderContent}>
                 <FontAwesome5 name="truck" size={20} color="#FFFFFF" solid style={{ marginRight: 8 }} />
-                <Text style={styles.modalTitle}>Edit Booking</Text>
+            <Text style={styles.modalTitle}>Edit Booking</Text>
               </View>
             </LinearGradient>
             
@@ -2170,6 +2232,25 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 6,
     elevation: 3,
+  },
+  pricingHeaderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  pricingCardTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+    textAlign: 'left',
+  },
+  pricingHeaderBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+    marginBottom: 30,
+    marginLeft: -20,
+    marginRight: -20,
   },
   negotiationText: {
     color: '#FFFFFF',
