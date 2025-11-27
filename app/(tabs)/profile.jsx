@@ -111,9 +111,9 @@ export default function ProfileScreen() {
     const payload = {};
     if (formName && formName !== (profile?.name || user?.name || '')) payload.name = formName.trim();
     if (formPhone !== (profile?.phone || user?.phone || '')) payload.phone = formPhone?.trim() || '';
-
-    // ❌ NO company update (company is not editable)
-    // if (formCompany && formCompany !== profile?.company) payload.company = formCompany.trim();
+    
+    if (formCompany !== (profile?.company || '')){payload.company = formCompany.trim();
+}
 
     // ✅ FIXED VALIDATION
     if (Object.keys(payload).length === 0) {  // ✅ CHANGE
@@ -271,9 +271,20 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Company</Text>
-                <Text style={[styles.infoValue]}>
-                  {profile?.company || '—'}
-                </Text>
+                {editing ? (
+  <TextInput
+    value={formCompany}
+    onChangeText={setFormCompany}
+    style={styles.inputInline}
+    placeholder="Company Name"
+    placeholderTextColor="#94A3B8"
+  />
+) : (
+  <Text style={[styles.infoValue]}>
+    {profile?.company || '—'}
+  </Text>
+)}
+
               </View>
             </View>
             
