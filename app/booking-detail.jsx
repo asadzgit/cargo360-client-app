@@ -1515,7 +1515,7 @@ const handleDropLocationChange = (text) => {
               </View>
               
               {/* Drop Location with Autocomplete */}
-              <Text style={styles.modalSubLabel}>Drop Location *</Text>
+              <Text style={styles.modalSubLabel}>Drop Off Location *</Text>
               <View style={{ position: 'relative', marginBottom: 12 }}>
                 <View style={[styles.modalInputContainer, validationErrors.dropLocation && { borderColor: '#DC2626' }]}>
                   <MapPin size={16} color="#64748B" style={{ marginRight: 8, marginTop: 2 }} />
