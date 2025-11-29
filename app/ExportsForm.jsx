@@ -7,27 +7,11 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from "react-native";
-import * as FileSystem from "expo-file-system"; // ✅ for Base64 encoding
-import FileUpload from "./FileUpload"; 
-
-// ✅ helper function
-const uriToBase64 = async (file) => {
-  if (!file?.uri) return null;
-  try {
-    const base64 = await FileSystem.readAsStringAsync(file.uri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    return {
-      name: file.name || file.uri.split("/").pop(),
-      size: file.size || 0,
-      base64,
-    };
-  } catch (err) {
-    console.error("Base64 conversion failed:", err);
-    return null;
-  }
-};
+import FileUpload from "./FileUpload";
+import { uploadDocument, DOCUMENT_TYPE_MAP } from '../utils/documentUpload';
+import { clearanceAPI } from '../services/api';
 
 export default function ExportsForm({ onSubmit }) {
   const [formData, setFormData] = useState({
@@ -39,6 +23,7 @@ export default function ExportsForm({ onSubmit }) {
 
   const [errors, setErrors] = useState({});
   const [uploadMessages, setUploadMessages] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
   const requiredFields = [
     "pol",
@@ -63,7 +48,7 @@ export default function ExportsForm({ onSubmit }) {
     return labels[docType] || docType;
   };
 
-  // ✅ Updated handleSubmit to convert + send data
+  // ✅ Updated handleSubmit with new API sequence: upload documents -> create clearance request
   const handleSubmit = async () => {
     const newErrors = {};
     requiredFields.forEach((field) => {
@@ -74,46 +59,66 @@ export default function ExportsForm({ onSubmit }) {
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
+    setSubmitting(true);
+
     try {
-      // Convert files to base64
-      const encodedFiles = {};
-      for (const [key, file] of Object.entries(formData.files)) {
-        if (file && file.uri) {
-          const converted = await uriToBase64(file);
-          if (converted) encodedFiles[key] = converted;
+      // Step 1: Upload all files using the new sequence (signature -> Cloudinary -> save metadata)
+      const documentUploads = [];
+      const fileEntries = Object.entries(formData.files);
+
+      for (const [key, file] of fileEntries) {
+        // Skip text fields (pol, pod, product, incoTerms)
+        if (isTextField(key)) continue;
+        
+        if (!file || !file.uri) continue;
+        
+        const documentType = DOCUMENT_TYPE_MAP[key];
+        if (!documentType) {
+          console.warn(`Unknown document type for key: ${key}`);
+          continue;
+        }
+
+        try {
+          const document = await uploadDocument(file, documentType);
+          documentUploads.push(document);
+        } catch (error) {
+          console.error(`Failed to upload ${key}:`, error);
+          Alert.alert("Error", `Failed to upload ${key}. Please try again.`);
+          setSubmitting(false);
+          return;
         }
       }
 
-      // Prepare payload
-      const payload = {
+      // Step 2: Create clearance request with uploaded document IDs and text fields
+      const documentIds = documentUploads.map(doc => doc.id);
+
+      // Map transport mode: 'air' -> 'air_only' for LHR, keep as is for KHI
+      const transportMode = formData.city === 'LHR' ? 'air_only' : formData.transportMode;
+
+      const requestPayload = {
+        requestType: 'export',
         city: formData.city,
-        transportMode: formData.transportMode,
+        transportMode: transportMode,
         containerType: formData.containerType,
-        files: encodedFiles,
+        port: null,
+        pol: formData.files.pol || null,
+        pod: formData.files.pod || null,
+        product: formData.files.product || null,
+        incoterms: formData.files.incoTerms || null,
+        shipmentId: null,
+        documentIds: documentIds,
       };
 
-      // Send to backend
-      const response = await fetch("http://localhost:3000/api/exports/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const requestResponse = await clearanceAPI.create(requestPayload);
+      const request = requestResponse.data?.data?.request || requestResponse.data?.request || requestResponse.data;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Server error:", errorText);
-        Alert.alert("Error", "Failed to submit Export Documentation.");
-        return;
-      }
-
-      const result = await response.json();
-      console.log("Upload result:", result);
-      Alert.alert("Success", "Export Documentation submitted successfully ✅");
-
-      onSubmit?.(payload);
+      Alert.alert("Success", "Export clearance request created successfully!");
+      onSubmit?.(request);
     } catch (error) {
       console.error("Upload error:", error);
-      Alert.alert("Error", "An error occurred while uploading.");
+      Alert.alert("Error", error?.message || "An error occurred while creating clearance request.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -304,8 +309,16 @@ export default function ExportsForm({ onSubmit }) {
         ))}
 
         {/* Submit */}
-        <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
-          <Text style={styles.submitText}>Submit Export Documentation</Text>
+        <TouchableOpacity 
+          style={[styles.submitBtn, submitting && styles.submitBtnDisabled]} 
+          onPress={handleSubmit}
+          disabled={submitting}
+        >
+          {submitting ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.submitText}>Submit Export Documentation</Text>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -357,6 +370,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     marginTop: 12,
+  },
+  submitBtnDisabled: {
+    opacity: 0.6,
   },
   submitText: {
     color: "#fff",
