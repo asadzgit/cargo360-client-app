@@ -113,7 +113,7 @@ export function BookingProvider({ children }) {
     return run;
   }
 
-  async function addBooking({ vehicleType, loadType, fromLocation, toLocation, description, cargoWeight, cargoSize, budget }) {
+  async function addBooking({ vehicleType, loadType, fromLocation, toLocation, description, cargoWeight, cargoSize, budget, numContainers, numberOfVehicles, pickupDate, deliveryDate, insurance, salesTax }) {
     const payload = {
       pickupLocation: fromLocation,
       dropLocation: toLocation,
@@ -123,6 +123,12 @@ export function BookingProvider({ children }) {
       ...(cargoWeight ? { cargoWeight } : {}),
       ...(cargoSize ? { cargoSize } : {}),
       ...(budget ? { budget } : {}),
+      ...(numContainers ? { numContainers } : {}),
+      ...(numberOfVehicles ? { numberOfVehicles } : {}),
+      ...(pickupDate ? { pickupDate } : {}),
+      ...(deliveryDate ? { deliveryDate } : {}),
+      ...(insurance !== undefined ? { insurance } : {}),
+      ...(salesTax !== undefined ? { salesTax } : {}),
     };
     const { data } = await bookingAPI.create(payload);
     await fetchBookings(undefined, { force: true });
@@ -146,8 +152,9 @@ export function BookingProvider({ children }) {
     return value;
   }
 
-  async function cancelBooking(id) {
-    const resp = await bookingAPI.cancel(id);
+  async function cancelBooking(id, reason) {
+    const payload = reason ? { cancelReason: reason } : {};
+    const resp = await bookingAPI.cancel(id, payload);
     await fetchBookings(undefined, { force: true });
     const raw = resp?.data;
     const value = raw?.data ?? raw;

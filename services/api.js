@@ -96,7 +96,7 @@ export const bookingAPI = {
   mine: (status) => api.get(`/shipments/mine${status ? `?status=${encodeURIComponent(status)}` : ''}`),
   get: (id) => api.get(`/shipments/${id}`),
   update: (id, body) => api.put(`/shipments/${id}`, body),
-  cancel: (id) => api.patch(`/shipments/${id}/cancel`),
+  cancel: (id, body) => api.patch(`/shipments/${id}/cancel`, body),
   currentLocation: (id) => api.get(`/location/shipments/${id}/current`),
   createDiscountRequest: (id, requestAmount) => api.post(`/shipments/${id}/discount-request`, { requestAmount }),
   confirm: (id) => api.patch(`/shipments/${id}/confirm`),
