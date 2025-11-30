@@ -105,3 +105,49 @@ export const bookingAPI = {
 export const userAPI = {
   updateMe: (body) => api.patch('/users/me', body),
 };
+
+// Document Upload APIs
+export const documentAPI = {
+  // Generate upload signature for Cloudinary
+  getUploadSignature: (documentType, fileName) => 
+    api.post('/documents/upload-signature', { documentType, fileName }),
+  
+  // Save document metadata after Cloudinary upload
+  save: (body) => api.post('/documents', body),
+  
+  // List documents (with optional filters)
+  list: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return api.get(`/documents${queryString ? `?${queryString}` : ''}`);
+  },
+  
+  // Get single document
+  get: (id) => api.get(`/documents/${id}`),
+  
+  // Delete document
+  delete: (id) => api.delete(`/documents/${id}`),
+};
+
+// Clearance Request APIs
+export const clearanceAPI = {
+  // Create clearance request
+  create: (body) => api.post('/clearance-requests', body),
+  
+  // List clearance requests (with optional filters)
+  list: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return api.get(`/clearance-requests${queryString ? `?${queryString}` : ''}`);
+  },
+  
+  // Get single clearance request
+  get: (id) => api.get(`/clearance-requests/${id}`),
+  
+  // Update clearance request
+  update: (id, body) => api.put(`/clearance-requests/${id}`, body),
+  
+  // Update clearance request status (admin/moderator only)
+  updateStatus: (id, body) => api.put(`/clearance-requests/${id}/status`, body),
+  
+  // Delete clearance request
+  delete: (id) => api.delete(`/clearance-requests/${id}`),
+};

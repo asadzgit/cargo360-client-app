@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Chrome as Home, Truck, ClipboardList, User } from 'lucide-react-native';
+import { Chrome as Home, Truck, ClipboardList, User, FileText } from 'lucide-react-native';
 
 export default function TabLayout() {
   return (
@@ -45,6 +45,15 @@ export default function TabLayout() {
           title: 'My Bookings',
           tabBarIcon: ({ size, color }) => (
             <ClipboardList size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="clearance"
+        options={{
+          title: 'Clearance',
+          tabBarIcon: ({ size, color }) => (
+            <FileText size={size} color={color} />
           ),
         }}
       />

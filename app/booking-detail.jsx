@@ -1,5 +1,3 @@
-// new code by gpt
-
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, TextInput, Linking, ActivityIndicator, RefreshControl, Pressable, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -76,8 +74,7 @@ export default function BookingDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
 
-  // Driver location modal state
-  const [locVisible, setLocVisible] = useState(false);
+  // Driver location state (no modal anymore)
   const [locLoading, setLocLoading] = useState(false);
   const [locError, setLocError] = useState('');
   const [locData, setLocData] = useState(null); // { latitude, longitude, timestamp, speed, heading, accuracy, driver }
@@ -313,6 +310,17 @@ export default function BookingDetailScreen() {
       ]).start();
     }
   }, [cancelReasonModalVisible]);
+
+
+  // Auto-fetch driver location when booking status indicates driver is on route
+  useEffect(() => {
+    if (!booking) return;
+    const status = (booking.status || '').toLowerCase();
+    if (['picked_up', 'in_transit'].includes(status)) {
+      // fetch immediately
+      fetchDriverLocation();
+    }
+  }, [booking]);
 
 
   // ---------- ADDED: handleRefresh used by both pull-to-refresh and the button ----------
@@ -1477,16 +1485,79 @@ const handleDropLocationChange = (text) => {
             </View>
           </>
         )}
+
+        {/* Replaced button with live Driver Location card (Option C, card style) */}
         {['picked_up', 'in_transit'].includes(booking.status.toLowerCase()) && (
-        <View style={{ marginTop: 12 }}>
-          <TouchableOpacity
-            onPress={() => { setLocVisible(true); fetchDriverLocation(); }}
-            style={{ backgroundColor: '#0EA5E9', borderRadius: 8, paddingVertical: 12, alignItems: 'center' }}
-          >
-            <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>See Driver Location</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+          <View style={styles.detailsCard}>
+            <Text style={styles.cardTitle}>Driver Location</Text>
+
+            {locLoading ? (
+              <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+                <ActivityIndicator color="#2563EB" />
+                <Text style={{ color: '#64748B', marginTop: 8 }}>Fetching current location…</Text>
+              </View>
+            ) : locError ? (
+              <Text style={{ color: '#DC2626', marginBottom: 8 }}>{locError}</Text>
+            ) : locData ? (
+              <>
+                <View style={styles.detailRow}>
+                  <View style={styles.iconContainer}>
+                    <MapPin size={18} color="#01304e" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.detailLabel}>Address</Text>
+                    <Text style={styles.detailValue}>{locAddress || `${locData.latitude}, ${locData.longitude}`}</Text>
+                  </View>
+                </View>
+
+                {locData?.driver?.name || locData?.driver?.phone ? (
+                  <View style={styles.detailRow}>
+                    <View style={styles.iconContainer}>
+                      <User size={18} color="#01304e" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.detailLabel}>Driver</Text>
+                      <Text style={styles.detailValue}>
+                        {locData?.driver?.name || 'N/A'}{locData?.driver?.phone ? ` · ${locData.driver.phone}` : ''}
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
+
+                <View style={styles.detailRow}>
+                  <View style={styles.iconContainer}>
+                    <ClipboardList size={18} color="#01304e" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.detailLabel}>Last updated</Text>
+                    <Text style={styles.detailValue}>{locData?.timestamp ? new Date(locData.timestamp).toLocaleString() : 'N/A'}</Text>
+                  </View>
+                </View>
+
+                {typeof locData?.speed === 'number' && (
+                  <Text style={{ color: '#64748B' }}>Speed: {locData.speed} km/h</Text>
+                )}
+                {typeof locData?.heading === 'number' && (
+                  <Text style={{ color: '#64748B' }}>Heading: {locData.heading}°</Text>
+                )}
+                {typeof locData?.accuracy === 'number' && (
+                  <Text style={{ color: '#64748B' }}>Accuracy: {locData.accuracy} m</Text>
+                )}
+
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+                  <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#0EA5E9' }]} onPress={fetchDriverLocation}>
+                    <Text style={styles.modalButtonText}>Refresh Location</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.mapButton]} onPress={openMaps}>
+                    <Text style={styles.mapButtonText}>Open in Google Maps</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <Text style={styles.detailValue}>Driver location not available.</Text>
+            )}
+          </View>
+        )}
       </View>
       {/* Edit Modal */}
       <Modal visible={editVisible} transparent animationType="none" onRequestClose={handleCloseModal}>
@@ -2908,6 +2979,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
   },
+
+  /* Map button styles */
+  mapButton: {
+    flex: 1,
+    marginTop: 0,
+    paddingVertical: 12,
+    paddingHorizontal:6,
+    backgroundColor: '#059669',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mapButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+
   /* ---------- end Confirmation Section Styles ---------- */
 });
 

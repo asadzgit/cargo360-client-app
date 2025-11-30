@@ -7,11 +7,13 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system"; // ✅ for Base64
 import { Picker } from "@react-native-picker/picker";
 import { Upload } from "lucide-react-native";
+import { uploadDocument, DOCUMENT_TYPE_MAP } from '../utils/documentUpload';
+import { clearanceAPI } from '../services/api';
 
 export default function FreightForm({ onSubmit }) {
   const [formData, setFormData] = useState({
@@ -22,24 +24,7 @@ export default function FreightForm({ onSubmit }) {
 
   const [errors, setErrors] = useState({});
   const [uploadMessages, setUploadMessages] = useState({});
-
-  // ✅ helper: convert file to base64
-  const uriToBase64 = async (file) => {
-    if (!file?.uri) return null;
-    try {
-      const base64 = await FileSystem.readAsStringAsync(file.uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-      return {
-        name: file.name || file.uri.split("/").pop(),
-        size: file.size || 0,
-        base64,
-      };
-    } catch (err) {
-      console.error("Base64 conversion failed:", err);
-      return null;
-    }
-  };
+  const [submitting, setSubmitting] = useState(false);
 
   const getLabel = (docType) => {
     const labels = {
@@ -163,7 +148,7 @@ export default function FreightForm({ onSubmit }) {
     }
   };
 
-  // ✅ handleSubmit with Base64 encoding + backend upload
+  // ✅ Updated handleSubmit with new API sequence: upload documents -> create clearance request
   const handleSubmit = async () => {
     const currentFields = getFields();
     const newErrors = {};
@@ -178,45 +163,76 @@ export default function FreightForm({ onSubmit }) {
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
+    setSubmitting(true);
+
     try {
-      // 🔹 convert all uploaded files to base64
-      const encodedFiles = {};
-      for (const [key, file] of Object.entries(formData.fields)) {
-        if (file && file.uri) {
-          const converted = await uriToBase64(file);
-          if (converted) encodedFiles[key] = converted;
-        } else {
-          encodedFiles[key] = file; // text fields
+      // Step 1: Upload all files using the new sequence (signature -> Cloudinary -> save metadata)
+      const documentUploads = [];
+      const fileEntries = Object.entries(formData.fields);
+
+      for (const [key, file] of fileEntries) {
+        // Skip text fields
+        if (isTextField(key)) continue;
+        
+        if (!file || !file.uri) continue;
+        
+        const documentType = DOCUMENT_TYPE_MAP[key];
+        if (!documentType) {
+          console.warn(`Unknown document type for key: ${key}`);
+          continue;
+        }
+
+        try {
+          const document = await uploadDocument(file, documentType);
+          documentUploads.push(document);
+        } catch (error) {
+          console.error(`Failed to upload ${key}:`, error);
+          Alert.alert("Error", `Failed to upload ${key}. Please try again.`);
+          setSubmitting(false);
+          return;
         }
       }
 
-      const payload = {
-        tradeType: formData.tradeType,
-        containerType: formData.containerType,
-        fields: encodedFiles,
+      // Step 2: Create clearance request with uploaded document IDs
+      const documentIds = documentUploads.map(doc => doc.id);
+
+      // Build request payload based on container type
+      const { containerType } = formData;
+      let requestPayload = {
+        requestType: 'freight_forwarding',
+        containerType: containerType,
+        pol: formData.fields.pol || null,
+        pod: formData.fields.pod || null,
+        product: formData.fields.product || null,
+        incoterms: formData.fields.incoTerms || null,
+        shipmentId: null,
+        documentIds: documentIds,
       };
 
-      const response = await fetch("http://localhost:3000/api/freight/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Server error:", errorText);
-        Alert.alert("Error", "Failed to submit Freight Form.");
-        return;
+      // Add LCL-specific fields
+      if (containerType === 'LCL') {
+        requestPayload.cbm = formData.fields.cbm ? parseFloat(formData.fields.cbm) : null;
+        requestPayload.packages = formData.fields.pkgs ? parseInt(formData.fields.pkgs, 10) : null;
       }
 
-      const result = await response.json();
-      console.log("Freight form upload result:", result);
-      Alert.alert("Success", "Freight forwarding data submitted successfully ✅");
+      // Add FCL-specific fields
+      if (containerType === 'FCL') {
+        requestPayload.containerSize = formData.fields.containerSize || null;
+        requestPayload.numberOfContainers = formData.fields.numberOfContainers 
+          ? parseInt(formData.fields.numberOfContainers, 10) 
+          : null;
+      }
 
-      onSubmit?.(payload);
+      const requestResponse = await clearanceAPI.create(requestPayload);
+      const request = requestResponse.data?.data?.request || requestResponse.data?.request || requestResponse.data;
+
+      Alert.alert("Success", "Freight forwarding clearance request created successfully!");
+      onSubmit?.(request);
     } catch (error) {
       console.error("Freight upload error:", error);
-      Alert.alert("Error", "An error occurred while uploading data.");
+      Alert.alert("Error", error?.message || "An error occurred while creating clearance request.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -362,10 +378,18 @@ export default function FreightForm({ onSubmit }) {
       ))}
 
       {/* Submit */}
-      <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
-        <Text style={styles.submitText}>
-          Submit Freight Forwarding Details
-        </Text>
+      <TouchableOpacity 
+        style={[styles.submitBtn, submitting && styles.submitBtnDisabled]} 
+        onPress={handleSubmit}
+        disabled={submitting}
+      >
+        {submitting ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <Text style={styles.submitText}>
+            Submit Freight Forwarding Details
+          </Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );
@@ -425,6 +449,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     marginTop: 12,
+  },
+  submitBtnDisabled: {
+    opacity: 0.6,
   },
   submitText: {
     color: "#fff",
