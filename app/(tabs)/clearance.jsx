@@ -9,17 +9,19 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { FileText, ArrowRight } from 'lucide-react-native';
+import { FileText, ArrowRight, Plus, RefreshCcw } from 'lucide-react-native';
 import { clearanceAPI } from '../../services/api';
+import ClearanceModal from '../ClearanceModal';
 
 export default function ClearanceListScreen() {
   const router = useRouter();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const scrollRef = useRef(null);
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     try {
       const { data } = await clearanceAPI.list({ limit: 50, offset: 0 });
       const container = data?.data || data;
@@ -43,7 +45,7 @@ export default function ClearanceListScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchRequests();
@@ -52,13 +54,15 @@ export default function ClearanceListScreen() {
   useFocusEffect(
     useCallback(() => {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
-    }, [])
+      // Refresh requests when screen is focused (in case a new request was added)
+      fetchRequests();
+    }, [fetchRequests])
   );
 
-  const onRefresh = () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    fetchRequests();
-  };
+    await fetchRequests();
+  }, [fetchRequests]);
 
   const formatDate = (value) => {
     if (!value) return '—';
@@ -115,8 +119,31 @@ export default function ClearanceListScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <FileText size={32} color="#FFFFFF" />
         <Text style={styles.headerTitle}>Clearance Requests</Text>
         <Text style={styles.headerSubtitle}>Track all your import, export and freight requests</Text>
+      </View>
+
+      {/* Refresh and Add Button Row */}
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setIsModalOpen(true)}
+          activeOpacity={0.8}
+        >
+          <Plus size={16} color="#FFFFFF" />
+          <Text style={styles.addButtonText}>Add Clearance</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.refreshButton} 
+          onPress={onRefresh}
+          disabled={refreshing}
+        >
+          <RefreshCcw size={16} color="#fff" />
+          <Text style={styles.refreshButtonText}>
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -190,6 +217,15 @@ export default function ClearanceListScreen() {
           })
         )}
       </ScrollView>
+
+      {/* Clearance Modal */}
+      <ClearanceModal 
+        visible={isModalOpen} 
+        onClose={() => {
+          setIsModalOpen(false);
+          fetchRequests(); // Refresh requests after modal closes
+        }} 
+      />
     </View>
   );
 }
@@ -200,35 +236,74 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   header: {
+    alignItems: 'center',
     paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
+    paddingBottom: 32,
     backgroundColor: '#01304e',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    borderBottomLeftRadius: 60,
+    borderBottomRightRadius: 60,
+    marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
   },
   headerTitle: {
     color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 4,
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 12,
+    marginBottom: 8,
   },
   headerSubtitle: {
     color: '#E5E7EB',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginTop: 0,
+    marginBottom: 16,
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ed8411',
+    paddingVertical: 6,
+    paddingHorizontal: 9,
+    borderRadius: 8,
+    gap: 6,
+  },
+  refreshButtonText: {
+    color: '#FFFFFF',
     fontSize: 13,
+    fontWeight: '600',
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#01304e',
+    paddingVertical: 6,
+    paddingHorizontal: 9,
+    borderRadius: 8,
+    gap: 6,
+  },
+  addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
   },
   scroll: {
     flex: 1,
+    paddingHorizontal: 24,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingBottom: 100,
   },
   loadingContainer: {
     flex: 1,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, FileText, CheckCircle2 } from 'lucide-react-native';
+import { ArrowLeft, FileText, CheckCircle2, Plus, RefreshCcw } from 'lucide-react-native';
 import { clearanceAPI } from '../services/api';
+import ClearanceModal from './ClearanceModal';
 
 export default function ClearanceDetailScreen() {
   const router = useRouter();
@@ -17,11 +19,30 @@ export default function ClearanceDetailScreen() {
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const loadRequest = useCallback(async () => {
+    try {
+      const { data } = await clearanceAPI.get(id);
+      const container = data?.data || data;
+      const req = container?.request || container;
+      setRequest(req || null);
+      setError('');
+    } catch (e) {
+      console.error('Failed to load clearance request', e);
+      setError(e?.message || 'Failed to load clearance request');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [id]);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
+        setLoading(true);
         const { data } = await clearanceAPI.get(id);
         const container = data?.data || data;
         const req = container?.request || container;
@@ -41,6 +62,11 @@ export default function ClearanceDetailScreen() {
       mounted = false;
     };
   }, [id]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadRequest();
+  }, [loadRequest]);
 
   const formatDateTime = (value) => {
     if (!value) return '—';
@@ -100,19 +126,52 @@ export default function ClearanceDetailScreen() {
   const docs = Array.isArray(request.Documents) ? request.Documents : [];
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.scrollContent}
+      stickyHeaderIndices={[0]}
+      contentContainerStyle={{ paddingBottom: 24 }}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={['#01304e']}
+          tintColor="#01304e"
+        />
+      }
     >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <FileText size={28} color="#FFFFFF" style={{ marginRight: 8 }} />
-        <Text style={styles.headerTitle}>Clearance Request</Text>
+        <FileText size={32} color="#FFFFFF" style={{alignSelf: 'center'}} />
+        <Text style={styles.title}>Clearance Details</Text>
       </View>
 
+      {/* Buttons row - Add Clearance on left, Refresh on right */}
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setIsModalOpen(true)}
+          activeOpacity={0.8}
+        >
+          <Plus size={16} color="#FFFFFF" />
+          <Text style={styles.addButtonText}>Add Clearance</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.refreshButton} 
+          onPress={onRefresh}
+          disabled={refreshing}
+        >
+          <RefreshCcw size={16} color="#fff" />
+          <Text style={styles.refreshText}>
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.content}>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Overview</Text>
         {renderMetaRow('Request ID', request.id)}
@@ -161,9 +220,21 @@ export default function ClearanceDetailScreen() {
           ))
         )}
       </View>
+      </View>
 
       <View style={{ height: 24 }} />
     </ScrollView>
+
+    {/* Clearance Modal */}
+    <ClearanceModal 
+      visible={isModalOpen} 
+      onClose={() => {
+        setIsModalOpen(false);
+        // Reload the request in case we need to refresh
+        loadRequest();
+      }} 
+    />
+    </View>
   );
 }
 
@@ -172,32 +243,77 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  scrollContent: {
-    paddingBottom: 24,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 18,
-    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 15,
+    paddingHorizontal: 24,
     backgroundColor: '#01304e',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    color: '#FFFFFF',
+    gap: 16,
+    marginBottom: 24,
+    zIndex: 10,
     elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    height: 180,
+    borderBottomLeftRadius: 60,
+    borderBottomRightRadius: 60,
   },
   backButton: {
-    padding: 4,
-    marginRight: 4,
+    padding: 8,
   },
-  headerTitle: {
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    marginTop: 12,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  buttonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginTop: 1,
+    marginBottom: 17,
+    gap: 12,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#01304e',
+    paddingVertical: 6,
+    paddingHorizontal: 9,
+    borderRadius: 8,
+    gap: 6,
+  },
+  addButtonText: {
     color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ed8411',
+    paddingVertical: 6,
+    paddingHorizontal: 9,
+    borderRadius: 8,
+    gap: 6,
+  },
+  refreshText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  content: {
+    paddingHorizontal: 24,
+    paddingBottom: 100,
   },
   loadingContainer: {
     flex: 1,
@@ -212,7 +328,7 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: 16,
-    marginHorizontal: 16,
+    marginHorizontal: 0,
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     padding: 14,
