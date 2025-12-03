@@ -1130,8 +1130,8 @@ const handleDropLocationChange = (text) => {
 
       {/* Buttons row - Edit on left, Refresh on right */}
       <View style={styles.buttonsContainer}>
-        {/* Edit Button - Available for editable statuses */}
-        {!['delivered', 'completed', 'cancelled'].includes((booking.status || '').toLowerCase()) && (
+        {/* Edit Button - Available only for pending status */}
+        {(booking.status || '').toLowerCase() === 'pending' && (
           <TouchableOpacity
             onPress={() => setEditVisible(true)}
             disabled={updating}
@@ -1398,18 +1398,6 @@ const handleDropLocationChange = (text) => {
           )}
         </View>
 
-        {/* Cancel Booking Button - Show for cancellable bookings */}
-        {!['delivered', 'completed', 'cancelled'].includes((booking?.status || '').toLowerCase()) && (
-          <TouchableOpacity
-            onPress={handleCancelBooking}
-            disabled={cancelling}
-            style={[styles.cancelBookingButton, cancelling && styles.cancelBookingButtonDisabled]}
-          >
-            <Text style={styles.cancelBookingButtonText}>
-              {cancelling ? 'Cancelling...' : 'Cancel Booking'}
-            </Text>
-          </TouchableOpacity>
-        )}
 
         {/* Confirmation Button - Only show if budget exists and status is pending or assigned */}
         {booking.budget && ['pending', 'assigned'].includes((booking.status || '').toLowerCase()) && (
@@ -1438,6 +1426,19 @@ const handleDropLocationChange = (text) => {
               You will be notified once a driver accepts your shipment
             </Text>
           </View>
+        )}
+
+        {/* Cancel Booking Button - Show only for pending status */}
+        {(booking?.status || '').toLowerCase() === 'pending' && (
+          <TouchableOpacity
+            onPress={handleCancelBooking}
+            disabled={cancelling}
+            style={[styles.cancelBookingButton, cancelling && styles.cancelBookingButtonDisabled]}
+          >
+            <Text style={styles.cancelBookingButtonText}>
+              {cancelling ? 'Cancelling...' : 'Cancel Booking'}
+            </Text>
+          </TouchableOpacity>
         )}
 
 
