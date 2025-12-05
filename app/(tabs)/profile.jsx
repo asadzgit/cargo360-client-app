@@ -45,6 +45,9 @@ export default function ProfileScreen() {
 
   const [delLoading, setDelLoading] = useState(false);
 
+  // Resend verification email state
+  const [resendLoading, setResendLoading] = useState(false);
+
   // Scroll to top when screen gains focus
   useFocusEffect(
     useCallback(() => {
@@ -178,6 +181,28 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleResendVerification = async () => {
+    const email = profile?.email || user?.email;
+    if (!email) {
+      Alert.alert('Error', 'Email address not found.');
+      return;
+    }
+
+    try {
+      setResendLoading(true);
+      await authAPI.resendVerification(email);
+      Alert.alert('Success', 'Verification email sent successfully! Please check your inbox. The link will expire in 24 hours.');
+      // Refresh profile to get updated data
+      const { data } = await authAPI.me();
+      const u = data?.user || data;
+      setProfile(u);
+    } catch (e) {
+      Alert.alert('Error', e?.message || 'Failed to send verification email. Please try again later.');
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   const totalBookings = bookings.length;
   const completedBookings = bookings.filter(b => b.status === 'Completed').length;
   const acceptedBookings = bookings.filter(b => b.status === 'Accepted').length;
@@ -261,6 +286,23 @@ export default function ProfileScreen() {
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Email</Text>
                 <Text style={styles.infoValue}>{profile?.email || user?.email || '—'}</Text>
+                {/* Show resend verification button if email is not verified */}
+                {(() => {
+                  const userFromContext = user?.user || user;
+                  const emailVerified = profile?.isEmailVerified ?? userFromContext?.isEmailVerified;
+                  return emailVerified !== true;
+                })() && (
+                  <TouchableOpacity
+                    style={[styles.resendButton, resendLoading && styles.resendButtonDisabled]}
+                    onPress={handleResendVerification}
+                    disabled={resendLoading}
+                  >
+                    <Mail size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={styles.resendButtonText}>
+                      {resendLoading ? 'Sending...' : 'Resend Verification Email'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
 
@@ -771,6 +813,31 @@ const styles = StyleSheet.create({
   },
   modalButtonText: {
     color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  resendButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#01304e',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 12,
+    alignSelf: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  resendButtonDisabled: {
+    backgroundColor: '#94A3B8',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  resendButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '600',
   },
 });
