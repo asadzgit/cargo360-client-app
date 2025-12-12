@@ -18,7 +18,9 @@ export default function ForgotPasswordScreen() {
     }
     setLoading(true);
     try {
-      await authAPI.forgotPassword(email);
+      // Normalize email to lowercase for case-insensitive handling
+      const normalizedEmail = email.toLowerCase().trim();
+      await authAPI.forgotPassword(normalizedEmail);
       Alert.alert('Success', 'Reset code sent to your email.', [
         { text: 'OK', onPress: () => router.replace('/reset-password') }
       ]);
