@@ -104,16 +104,16 @@ export default function SignupScreen() {
               placeholder="Enter company name"
               value={company}
               onChangeText={(text) => {
-                // Check if invalid characters are being typed
-                const hasInvalidChars = /[^a-zA-Z\s]/.test(text);
+                // Check if invalid characters are being typed (only allow letters, digits, spaces)
+                const hasInvalidChars = /[^a-zA-Z0-9\s]/.test(text);
                 
-                // Only allow letters and spaces
-                const sanitized = text.replace(/[^a-zA-Z\s]/g, '');
+                // Only allow letters, digits, and spaces
+                const sanitized = text.replace(/[^a-zA-Z0-9\s]/g, '');
                 setCompany(sanitized);
                 
                 // Show error immediately if invalid characters detected
                 if (hasInvalidChars) {
-                  setCompanyError('Company name can only contain letters and spaces');
+                  setCompanyError('Company name can only contain letters, numbers, and spaces');
                 } else {
                   // Validate immediately
                   if (sanitized.length === 0) {
@@ -121,7 +121,19 @@ export default function SignupScreen() {
                   } else if (sanitized.length < 3) {
                     setCompanyError('Company name must be at least 3 characters');
                   } else {
-                    setCompanyError('');
+                    // Count letters
+                    const letterCount = (sanitized.match(/[a-zA-Z]/g) || []).length;
+                    if (letterCount < 3) {
+                      setCompanyError('Company name must contain at least 3 letters');
+                    } else {
+                      // Check if it's only digits
+                      const isOnlyDigits = /^\d+$/.test(sanitized.replace(/\s/g, ''));
+                      if (isOnlyDigits) {
+                        setCompanyError('Company name cannot contain only digits');
+                      } else {
+                        setCompanyError('');
+                      }
+                    }
                   }
                 }
               }}
@@ -131,10 +143,22 @@ export default function SignupScreen() {
                   setCompanyError('Company name is required');
                 } else if (company.length < 3) {
                   setCompanyError('Company name must be at least 3 characters');
-                } else if (!/^[a-zA-Z\s]+$/.test(company)) {
-                  setCompanyError('Company name can only contain letters and spaces');
+                } else if (!/^[a-zA-Z0-9\s]+$/.test(company)) {
+                  setCompanyError('Company name can only contain letters, numbers, and spaces');
                 } else {
-                  setCompanyError('');
+                  // Count letters
+                  const letterCount = (company.match(/[a-zA-Z]/g) || []).length;
+                  if (letterCount < 3) {
+                    setCompanyError('Company name must contain at least 3 letters');
+                  } else {
+                    // Check if it's only digits
+                    const isOnlyDigits = /^\d+$/.test(company.replace(/\s/g, ''));
+                    if (isOnlyDigits) {
+                      setCompanyError('Company name cannot contain only digits');
+                    } else {
+                      setCompanyError('');
+                    }
+                  }
                 }
               }}
               placeholderTextColor="#94A3B8"
