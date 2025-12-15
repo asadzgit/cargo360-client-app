@@ -2,7 +2,14 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 
-const API_BASE_URL = (Constants?.expoConfig?.extra?.apiBaseUrl) || 'https://cargo360-api.onrender.com/';
+// Resolve API base URL with priority:
+// 1) Expo public env (EXPO_PUBLIC_API_BASE_URL) for easy local/preview switching
+// 2) app.json extra.apiBaseUrl (current production default)
+// 3) Fallback to production
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL ||
+  (Constants?.expoConfig?.extra?.apiBaseUrl) ||
+  'https://cargo360-api.onrender.com/';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
