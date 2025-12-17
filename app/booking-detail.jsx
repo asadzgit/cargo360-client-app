@@ -116,6 +116,7 @@ export default function BookingDetailScreen() {
       salesTax: bookingFromContext.salesTax,
       cargoSize: bookingFromContext.cargoSize,
       budget: bookingFromContext.budget,
+      totalAmount: bookingFromContext.totalAmount || null,
       numContainers: bookingFromContext.numContainers || bookingFromContext.numberOfVehicles || '',
       deliveryDate: bookingFromContext.deliveryDate || bookingFromContext.delivery_date || '',
       pickupDate: bookingFromContext.pickupDate || bookingFromContext.pickup_date || bookingFromContext.createdAt || '',
@@ -145,6 +146,7 @@ export default function BookingDetailScreen() {
             cargoWeight: data?.cargoWeight,
             cargoSize: data?.cargoSize,
             budget: data?.budget,
+            totalAmount: data?.totalAmount || null,
             // insurance: data?.insurance || false,
             salesTax: data?.salesTax || false,
             numContainers: data?.numContainers || data?.numberOfVehicles || '',
@@ -231,6 +233,7 @@ export default function BookingDetailScreen() {
         salesTax: bookingFromContext.salesTax,
         cargoSize: bookingFromContext.cargoSize,
         budget: bookingFromContext.budget,
+        totalAmount: bookingFromContext.totalAmount || null,
         numContainers: bookingFromContext.numContainers || bookingFromContext.numberOfVehicles || '',
         deliveryDate: bookingFromContext.deliveryDate || bookingFromContext.delivery_date || '',
         pickupDate: bookingFromContext.pickupDate || bookingFromContext.pickup_date || bookingFromContext.createdAt || '',
@@ -341,6 +344,7 @@ export default function BookingDetailScreen() {
         cargoWeight: data?.cargoWeight,
         cargoSize: data?.cargoSize,
         budget: data?.budget,
+        totalAmount: data?.totalAmount || null,
         // insurance: data?.insurance || false,
         salesTax: data?.salesTax || false,
             numContainers: data?.numContainers || data?.numberOfVehicles || '',
@@ -508,6 +512,7 @@ export default function BookingDetailScreen() {
           cargoWeight: updatedBooking?.cargoWeight,
           cargoSize: updatedBooking?.cargoSize,
           budget: updatedBooking?.budget,
+          totalAmount: updatedBooking?.totalAmount || null,
           salesTax: updatedBooking?.salesTax || false,
           numContainers: updatedBooking?.numContainers || updatedBooking?.numberOfVehicles || '',
           deliveryDate: updatedBooking?.deliveryDate || updatedBooking?.delivery_date || '',
@@ -539,6 +544,7 @@ export default function BookingDetailScreen() {
             cargoWeight: currentBooking?.cargoWeight,
             cargoSize: currentBooking?.cargoSize,
             budget: currentBooking?.budget,
+            totalAmount: currentBooking?.totalAmount || null,
             salesTax: currentBooking?.salesTax || false,
             numContainers: currentBooking?.numContainers || currentBooking?.numberOfVehicles || '',
             deliveryDate: currentBooking?.deliveryDate || currentBooking?.delivery_date || '',
@@ -709,6 +715,7 @@ export default function BookingDetailScreen() {
           cargoWeight: updatedData?.cargoWeight || form.cargoWeight || booking.cargoWeight,
           cargoSize: updatedData?.cargoSize || form.cargoSize || booking.cargoSize,
           budget: updatedData?.budget || form.budget || booking.budget,
+          totalAmount: updatedData?.totalAmount || booking.totalAmount || null,
           numContainers: updatedData?.numContainers || updatedData?.numberOfVehicles || form.numContainers || booking.numContainers,
           deliveryDate: updatedData?.deliveryDate || updatedData?.delivery_date || deliveryDate || booking.deliveryDate,
           pickupDate: updatedData?.pickupDate || updatedData?.pickup_date || updatedData?.createdAt || booking.pickupDate || booking.createdAt,
@@ -1304,7 +1311,12 @@ const handleDropLocationChange = (text) => {
 
 
         {/* Pricing & Budget Section */}
-        <View style={styles.pricingCard}>
+        <LinearGradient
+          colors={['#01304e', '#02396b']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.pricingCard}
+        >
           <View style={styles.pricingHeaderContainer}>
             <FontAwesome5 name="money-bill" size={20} color="#FFFFFF" solid style={{ marginRight: 8 }} />
             <Text style={styles.pricingCardTitle}>Pricing</Text>
@@ -1319,30 +1331,39 @@ const handleDropLocationChange = (text) => {
           {/* Budget Exists */}
           {booking.budget && (
             <>
-              {/* Discount Request Status Messages */}
-              {booking.DiscountRequest?.status === 'pending' && (
-                <View style={styles.statusMessageContainer}>
-                  <Text style={styles.statusPendingText}>Discount request pending</Text>
-                  <Text style={styles.statusSubtext}>
-                    Your request for PKR {formatCurrency(booking.DiscountRequest.requestAmount)} is under review
+              {/* Estimated Budget - Admin's Original Budget - Always show */}
+              <View style={styles.priceItem}>
+                <Text style={styles.priceItemLabel}>Estimated Budget</Text>
+                <Text style={styles.priceItemValue}>
+                  PKR {parseFloat(booking.budget).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </Text>
+              </View>
+
+              {/* Discount Request Section */}
+              {booking.DiscountRequest && booking.DiscountRequest.status === 'pending' && (
+                <View style={styles.priceItem}>
+                  <Text style={[styles.priceItemLabel, { color: '#fbbf24' }]}>Your Requested Budget</Text>
+                  <Text style={[styles.priceItemValue, { color: '#fbbf24' }]}>
+                    PKR {parseFloat(booking.DiscountRequest.requestAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Pending)
                   </Text>
                 </View>
               )}
 
-              {booking.DiscountRequest?.status === 'accepted' && (
-                <View style={styles.statusMessageContainer}>
-                  <Text style={styles.statusAcceptedText}>✓ Discount request accepted</Text>
-                  <Text style={styles.statusAcceptedText}>
-                    Amount accepted: PKR {formatCurrency(booking.DiscountRequest.requestAmount)}
+              {/* When discount is accepted, show accepted amount and discount */}
+              {booking.DiscountRequest && booking.DiscountRequest.status === 'accepted' && booking.totalAmount && (
+                <View style={[styles.priceItem, { borderBottomWidth: 0 }]}>
+                  <Text style={styles.priceItemLabel}>Accepted Discount Amount</Text>
+                  <Text style={styles.priceItemValue}>
+                    PKR {parseFloat(booking.DiscountRequest.requestAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Text>
                 </View>
               )}
 
-              {booking.DiscountRequest?.status === 'rejected' && (
-                <View style={styles.statusMessageContainer}>
-                  <Text style={styles.statusRejectedText}>✗ Discount request rejected</Text>
-                  <Text style={styles.statusRejectedText}>
-                    Amount rejected: PKR {formatCurrency(booking.DiscountRequest.requestAmount)}
+              {booking.DiscountRequest && booking.DiscountRequest.status === 'rejected' && (
+                <View style={styles.priceItem}>
+                  <Text style={[styles.priceItemLabel, { color: '#ef4444' }]}>Discount Request</Text>
+                  <Text style={[styles.priceItemValue, { color: '#ef4444' }]}>
+                    PKR {parseFloat(booking.DiscountRequest.requestAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Rejected)
                   </Text>
                 </View>
               )}
@@ -1375,15 +1396,14 @@ const handleDropLocationChange = (text) => {
                 </View>
               )}
 
-              {/* Budget Display */}
-              <Text style={styles.budgetDescription}>
-                Best price after discussion with several brokers
-              </Text>
-              
-              <View style={styles.budgetRow}>
-                <Text style={styles.budgetLabel}>Budget</Text>
-                <Text style={styles.budgetAmount}>
-                  PKR {formatCurrency(booking.budget)}
+              {/* Total Budget - Show discount amount if discount accepted, otherwise show original budget */}
+              <View style={styles.priceItemTotal}>
+                <Text style={styles.priceItemTotalLabel}>Total Budget</Text>
+                <Text style={styles.priceItemTotalValue}>
+                  PKR {booking.totalAmount 
+                    ? (parseFloat(booking.budget) - parseFloat(booking.totalAmount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                    : parseFloat(booking.budget).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                  }
                 </Text>
               </View>
 
@@ -1391,12 +1411,15 @@ const handleDropLocationChange = (text) => {
               <View style={styles.wordsContainer}>
                 <Text style={styles.wordsLabel}>Amount in words</Text>
                 <Text style={styles.wordsValue}>
-                  {numberToWords(booking.budget)}
+                  {numberToWords(booking.totalAmount 
+                    ? parseFloat(booking.budget) - parseFloat(booking.totalAmount)
+                    : parseFloat(booking.budget)
+                  )}
                 </Text>
               </View>
             </>
           )}
-        </View>
+        </LinearGradient>
 
 
         {/* Confirmation Button - Only show if budget exists and status is pending or assigned */}
@@ -1897,7 +1920,8 @@ const handleDropLocationChange = (text) => {
         </Animated.View>
       </Modal>
       {/* Driver Location Modal */}
-      <Modal visible={locVisible} transparent animationType="slide" onRequestClose={() => setLocVisible(false)}>
+      {/* commented out because we don't need it anymore as it causes errors*/}
+      {/* <Modal visible={locVisible} transparent animationType="slide" onRequestClose={() => setLocVisible(false)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Driver Location</Text>
@@ -1958,7 +1982,7 @@ const handleDropLocationChange = (text) => {
             )}
           </View>
         </View>
-      </Modal>
+      </Modal> */}
 
       {/* Cancel Reason Modal */}
       <Modal 
@@ -2749,7 +2773,6 @@ const styles = StyleSheet.create({
 
   /* ---------- Pricing & Discount Request Styles ---------- */
   pricingCard: {
-    backgroundColor: '#01304e',
     borderRadius: 14,
     padding: 20,
     marginBottom: 16,
@@ -2774,7 +2797,7 @@ const styles = StyleSheet.create({
   pricingHeaderBorder: {
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.2)',
-    marginBottom: 30,
+    marginBottom: 20,
     marginLeft: -20,
     marginRight: -20,
   },
@@ -2783,39 +2806,51 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  statusMessageContainer: {
-    marginBottom: 16,
-    paddingBottom: 16,
+  priceItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
-  statusPendingText: {
+  priceItemLabel: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  priceItemValue: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-    marginBottom: 4,
   },
-  statusSubtext: {
-    color: '#E5E7EB',
-    fontSize: 13,
+  priceItemTotal: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.2)',
   },
-  statusAcceptedText: {
+  priceItemTotalLabel: {
     color: '#ed8411',
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: '700',
   },
-  statusRejectedText: {
-    color: '#ef4444',
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 4,
+  priceItemTotalValue: {
+    color: '#ed8411',
+    fontSize: 18,
+    fontWeight: '700',
   },
   discountForm: {
-    marginBottom: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+    marginTop: 16,
+    marginBottom: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
   discountLabel: {
     color: '#FFFFFF',
@@ -2854,36 +2889,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-  budgetDescription: {
-    color: '#E5E7EB',
-    fontSize: 13,
-    marginBottom: 16,
-    lineHeight: 18,
-  },
-  budgetRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  budgetLabel: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  budgetAmount: {
-    color: '#FFFFFF',
-    fontSize: 26,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-  },
   wordsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginTop: 14,
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
     gap: 12,
   },
   wordsLabel: {
