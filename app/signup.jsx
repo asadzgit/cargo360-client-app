@@ -11,6 +11,7 @@ export default function SignupScreen() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [companyError, setCompanyError] = useState('');
   const router = useRouter();
   const { signup } = useBooking();
   const [showPassword, setShowPassword] = useState(false);
@@ -18,6 +19,16 @@ export default function SignupScreen() {
   const handleSignup = async () => {
     if (!name || !email || !password || !phone || !company) {
       Alert.alert('Error', 'Please fill in all the fields');
+      return;
+    }
+
+    // Validate company name: minimum 3 characters, letters and spaces only
+    if (company.length < 3) {
+      Alert.alert('Error', 'Company name must be at least 3 characters');
+      return;
+    }
+    if (!/^[a-zA-Z\s]+$/.test(company)) {
+      Alert.alert('Error', 'Company name can only contain letters and spaces');
       return;
     }
 
@@ -85,15 +96,75 @@ export default function SignupScreen() {
         </View>
 
         {/* 🟢 New Company Name Field (added below email) */}
-        <View style={styles.inputContainer}>
-          <Building2 size={20} color="#999999" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Company name"
-            value={company}
-            onChangeText={setCompany}
-            placeholderTextColor="#94A3B8"
-          />
+        <View>
+          <View style={[styles.inputContainer, companyError && styles.inputContainerError]}>
+            <Building2 size={20} color="#999999" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Enter company name"
+              value={company}
+              onChangeText={(text) => {
+                // Check if invalid characters are being typed (only allow letters, digits, spaces)
+                const hasInvalidChars = /[^a-zA-Z0-9\s]/.test(text);
+                
+                // Only allow letters, digits, and spaces
+                const sanitized = text.replace(/[^a-zA-Z0-9\s]/g, '');
+                setCompany(sanitized);
+                
+                // Show error immediately if invalid characters detected
+                if (hasInvalidChars) {
+                  setCompanyError('Company name can only contain letters, numbers, and spaces');
+                } else {
+                  // Validate immediately
+                  if (sanitized.length === 0) {
+                    setCompanyError('Company name is required');
+                  } else if (sanitized.length < 3) {
+                    setCompanyError('Company name must be at least 3 characters');
+                  } else {
+                    // Count letters
+                    const letterCount = (sanitized.match(/[a-zA-Z]/g) || []).length;
+                    if (letterCount < 3) {
+                      setCompanyError('Company name must contain at least 3 letters');
+                    } else {
+                      // Check if it's only digits
+                      const isOnlyDigits = /^\d+$/.test(sanitized.replace(/\s/g, ''));
+                      if (isOnlyDigits) {
+                        setCompanyError('Company name cannot contain only digits');
+                      } else {
+                        setCompanyError('');
+                      }
+                    }
+                  }
+                }
+              }}
+              onBlur={() => {
+                // Validate on blur
+                if (company.length === 0) {
+                  setCompanyError('Company name is required');
+                } else if (company.length < 3) {
+                  setCompanyError('Company name must be at least 3 characters');
+                } else if (!/^[a-zA-Z0-9\s]+$/.test(company)) {
+                  setCompanyError('Company name can only contain letters, numbers, and spaces');
+                } else {
+                  // Count letters
+                  const letterCount = (company.match(/[a-zA-Z]/g) || []).length;
+                  if (letterCount < 3) {
+                    setCompanyError('Company name must contain at least 3 letters');
+                  } else {
+                    // Check if it's only digits
+                    const isOnlyDigits = /^\d+$/.test(company.replace(/\s/g, ''));
+                    if (isOnlyDigits) {
+                      setCompanyError('Company name cannot contain only digits');
+                    } else {
+                      setCompanyError('');
+                    }
+                  }
+                }
+              }}
+              placeholderTextColor="#94A3B8"
+            />
+          </View>
+          {companyError ? <Text style={styles.errorText}>{companyError}</Text> : null}
         </View>
 
         <View style={styles.inputContainer}>
@@ -182,7 +253,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 4,
     paddingHorizontal: 16,
     paddingVertical: 4,
     borderWidth: 2,
@@ -192,6 +263,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+  },
+  inputContainerError: {
+    borderColor: '#DC2626',
+    marginBottom: 4,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 12,
+    marginTop: 0,
+    marginBottom: 12,
+    paddingLeft: 4,
   },
   inputIcon: {
     marginRight: 12,
