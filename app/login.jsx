@@ -26,7 +26,9 @@ export default function LoginScreen() {
     setShowResendButton(false); // Reset resend button visibility
     
     try {
-      await login(email, password);
+      // Convert email to lowercase for case-insensitive login
+      const normalizedEmail = email.toLowerCase().trim();
+      await login(normalizedEmail, password);
       router.replace('/(tabs)');
     } catch (error) {
       const errorMessage = error?.message || 'Login failed. Please try again.';
@@ -73,7 +75,9 @@ export default function LoginScreen() {
 
     try {
       setResendLoading(true);
-      await authAPI.resendVerification(email);
+      // Normalize email to lowercase for case-insensitive handling
+      const normalizedEmail = email.toLowerCase().trim();
+      await authAPI.resendVerification(normalizedEmail);
       Alert.alert('Success', 'Verification email sent successfully! Please check your inbox. The link will expire in 24 hours.');
       setShowResendButton(false);
     } catch (e) {

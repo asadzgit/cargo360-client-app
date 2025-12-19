@@ -40,7 +40,9 @@ export default function SignupScreen() {
     setLoading(true);
     
     try {
-      const payload = { name, email, company, password };
+      // Normalize email to lowercase for case-insensitive handling
+      const normalizedEmail = email.toLowerCase().trim();
+      const payload = { name, email: normalizedEmail, company, password };
       if (phone) payload.phone = phone;
       const response = await signup(payload);
       
