@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Truck, Package, MapPin, ArrowRight, Box } from 'lucide-react-native';
+import { Truck, Package, MapPin, ArrowRight, Box, Contact } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 
 /**
@@ -71,13 +71,21 @@ export default function BookTruckScreen() {
   const scrollViewRef = useRef(null);
 
   const router = useRouter();
-  const { addBooking } = useBooking();
+  const { addBooking, user } = useBooking();
+  const [companyName, setCompanyName] = useState('');
 
   // Scroll to top when screen gains focus
   useFocusEffect(
     useCallback(() => {
       scrollViewRef.current?.scrollTo({ y: 0, animated: false });
-    }, [])
+      // Re-check user company when screen gains focus
+      if (user) {
+        const userCompany = user?.company || user?.user?.company;
+        if (userCompany && !companyName) {
+          setCompanyName(userCompany);
+        }
+      }
+    }, [user, companyName])
   );
 
   // DATE HANDLERS & VALIDATORS
@@ -95,6 +103,13 @@ export default function BookTruckScreen() {
     const iso = `${yyyy}-${mm}-${dd}`;
     setPickupDate(iso);
   }, []);
+
+  // Pre-fill company name from user profile
+  useEffect(() => {
+    if (user?.company) {
+      setCompanyName(user.company);
+    }
+  }, [user]);
 
   // Format user input (DD/MM/YYYY) and limit to valid day/month
   const formatDateInput = (value) => {
@@ -333,7 +348,8 @@ export default function BookTruckScreen() {
         pickupDate,
         deliveryDate,
         insurance: !!insurance,   
-        salesTax: !!salesTax, 
+        salesTax: !!salesTax,
+        companyName: companyName || undefined,
       });
       console.log('Submitting:', {
         insurance,
@@ -360,6 +376,7 @@ export default function BookTruckScreen() {
               setCargoWeight('');
               setDeliveryDate('');
               setDeliveryDateDisplay('');
+              setCompanyName(user?.company || '');
               // Navigate to home
               router.push('/(tabs)');
             }
@@ -570,6 +587,21 @@ export default function BookTruckScreen() {
               multiline
               numberOfLines={4}
               textAlignVertical="top"
+              placeholderTextColor="#94A3B8"
+            />
+          </View>
+        </View>
+
+        {/* Company Name */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Company Name</Text>
+          <View style={styles.inputContainer}>
+            <Contact size={20} color="#64748B" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your company name"
+              value={companyName}
+              onChangeText={setCompanyName}
               placeholderTextColor="#94A3B8"
             />
           </View>
