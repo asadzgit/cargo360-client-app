@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 // 1) Expo public env (EXPO_PUBLIC_API_BASE_URL) for easy local/preview switching
 // 2) app.json extra.apiBaseUrl (current production default)
 // 3) Fallback to production
-const API_BASE_URL =
+export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ||
   (Constants?.expoConfig?.extra?.apiBaseUrl) ||
   'https://cargo360-api.onrender.com/';
@@ -16,7 +16,7 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-async function getAccessToken() {
+export async function getAccessToken() {
   return SecureStore.getItemAsync('accessToken');
 }
 async function getRefreshToken() {
