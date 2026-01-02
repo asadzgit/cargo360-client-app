@@ -253,7 +253,7 @@ export default function BookTruckScreen() {
         { headers: 
           { 'Accept-Language': 'en', 
             'User-Agent': 'Cargo360App/1.0 (contact: info@cargo360pk.com)',
-            'Referer': 'https://cargo360pk.com'
+            'Referer': 'https://app.cargo360pk.com'
           }
         }
       );

@@ -171,7 +171,7 @@ export default function ProfileScreen() {
       setDelLoading(true);
       const { data } = await authAPI.deletionLink();
       // Prefer server-provided URL; fallback to building with token if needed
-      const url = data?.url || `https://cargo360pk.com/delete-mobile-account#token=${encodeURIComponent(data?.token)}`;
+      const url = data?.url || `https://app.cargo360pk.com/delete-mobile-account#token=${encodeURIComponent(data?.token)}`;
       if (!url) throw new Error('Deletion link unavailable.');
       await Linking.openURL(url);
     } catch (e) {
@@ -416,7 +416,7 @@ export default function ProfileScreen() {
 
           <TouchableOpacity
             style={styles.supportRow}
-            onPress={() => Linking.openURL('https://cargo360pk.com/privacy-policy')}
+            onPress={() => Linking.openURL('https://app.cargo360pk.com/privacy-policy')}
           >
             <View style={styles.iconContainerSupport}>
               <Contact size={20} color="#01304e" />
