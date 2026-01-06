@@ -1,5 +1,5 @@
 // // changes start from here---
-import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, RefreshControl, Modal} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, RefreshControl, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Truck, ClipboardList, User, MapPin, RefreshCw, Plus} from 'lucide-react-native';
@@ -7,6 +7,7 @@ import { useBooking } from '../../context/BookingContext';
 import { humanize } from '../../utils';
 import { useState, useCallback, useRef } from 'react';
 import ClearanceModal from '../ClearanceModal';
+import WhatsAppButton from '../../components/WhatsAppButton';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -173,6 +174,8 @@ export default function HomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      <WhatsAppButton accessibilityLabel="Contact Cargo360 on WhatsApp" />
     </View>
   );
 }
@@ -516,7 +519,6 @@ halfButtonText: {
   fontWeight: '600',
   marginLeft: 2,
 },
-
 });
 
 
