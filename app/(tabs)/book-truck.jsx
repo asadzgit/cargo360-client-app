@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Truck, Package, MapPin, ArrowRight, Box } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
+import VehicleTypeSelector from '../../components/VehicleTypeSelector';
 
 /**
  * Google Places Autocomplete Configuration
@@ -27,13 +28,6 @@ import { useBooking } from '../../context/BookingContext';
  * - Also restricted to Pakistan (countrycodes=pk)
  */
 
-const vehicleTypes = [
-  'Small Truck (1-2 Tons)',
-  'Medium Truck (3-5 Tons)', 
-  'Large Truck (6-10 Tons)',
-  'Heavy Truck (10+ Tons)'
-];
-
 const loadTypes = [
   'General Cargo',
   'Fragile Items',
@@ -46,6 +40,9 @@ const loadTypes = [
 export default function BookTruckScreen() {
   const [vehicleType, setVehicleType] = useState('');
   const [customVehicleType, setCustomVehicleType] = useState('');
+  const [selectedVehicleInfo, setSelectedVehicleInfo] = useState(null);
+  const [vehicleSelectorOpen, setVehicleSelectorOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [loadType, setLoadType] = useState('');
   const [fromLocation, setFromLocation] = useState('');
   const [toLocation, setToLocation] = useState('');
@@ -292,8 +289,30 @@ export default function BookTruckScreen() {
     }, 300);
   };
 
+  const handleOpenVehicleSelector = (category) => {
+    setSelectedCategory(category);
+    setVehicleSelectorOpen(true);
+    // Clear "Other" selection when opening a category selector
+    if (vehicleType === 'Other') {
+      setVehicleType('');
+      setCustomVehicleType('');
+    }
+  };
+
+  const handleCloseVehicleSelector = () => {
+    setVehicleSelectorOpen(false);
+    setSelectedCategory('');
+  };
+
+  const handleVehicleSelect = (vehicle) => {
+    // Use vehicle name as the vehicleType value
+    setVehicleType(vehicle.name);
+    setCustomVehicleType('');
+    setSelectedVehicleInfo(vehicle);
+  };
+
   const handleSubmit = async () => {
-    const finalVehicleType = vehicleType === 'Other (please specify)' ? customVehicleType.trim() : vehicleType;
+    const finalVehicleType = vehicleType === 'Other' ? customVehicleType.trim() : vehicleType;
 
     // Date validation
     if (!pickupDate || !deliveryDate) {
@@ -313,7 +332,7 @@ export default function BookTruckScreen() {
       return;
     }
 
-    if (vehicleType === 'Other (please specify)' && finalVehicleType.length < 5) {
+    if (vehicleType === 'Other' && finalVehicleType.length < 5) {
       Alert.alert('Error', 'Please specify a vehicle type (min 5 characters).');
       return;
     }
@@ -351,6 +370,8 @@ export default function BookTruckScreen() {
             onPress: () => {
               // Reset form
               setVehicleType('');
+              setCustomVehicleType('');
+              setSelectedVehicleInfo(null);
               setLoadType('');
               setFromLocation('');
               setToLocation('');
@@ -435,39 +456,109 @@ export default function BookTruckScreen() {
 
         <View style={styles.section}>
           <Text style={styles.label}>Vehicle Type *</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionsContainer}>
-            {[...vehicleTypes, 'Other (please specify)'].map((type) => (
+          <View style={styles.categoryButtonsContainer}>
+            <TouchableOpacity
+              style={styles.categoryButton}
+              onPress={() => handleOpenVehicleSelector('Suzuki')}
+            >
+              <Text style={styles.categoryButtonText}>Suzuki</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.categoryButton}
+              onPress={() => handleOpenVehicleSelector('Shehzore')}
+            >
+              <Text style={styles.categoryButtonText}>Shehzore</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.categoryButton, styles.categoryButtonLastInRow]}
+              onPress={() => handleOpenVehicleSelector('Mazda')}
+            >
+              <Text style={styles.categoryButtonText}>Mazda</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.categoryButton}
+              onPress={() => handleOpenVehicleSelector('Truck')}
+            >
+              <Text style={styles.categoryButtonText}>Truck</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.categoryButton}
+              onPress={() => handleOpenVehicleSelector('Trailer')}
+            >
+              <Text style={styles.categoryButtonText}>Trailer</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.categoryButton, 
+                styles.categoryButtonOther, 
+                styles.categoryButtonLastInRow,
+                vehicleType === 'Other' && styles.categoryButtonSelected
+              ]}
+              onPress={() => {
+                if (vehicleType === 'Other') {
+                  // Toggle off if already selected
+                  setVehicleType('');
+                  setCustomVehicleType('');
+                } else {
+                  // Select "Other"
+                  setVehicleType('Other');
+                  setSelectedVehicleInfo(null);
+                }
+              }}
+            >
+              <Text style={[
+                styles.categoryButtonText,
+                vehicleType === 'Other' && styles.categoryButtonTextSelected
+              ]}>Other</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Selected Vehicle Display */}
+          {vehicleType && vehicleType !== 'Other' && selectedVehicleInfo && (
+            <View style={styles.selectedVehicleContainer}>
+              <View style={styles.selectedVehicleContent}>
+                <Truck size={20} color="#01304e" />
+                <View style={styles.selectedVehicleText}>
+                  <Text style={styles.selectedVehicleName}>{vehicleType}</Text>
+                  {selectedVehicleInfo.capacity && (
+                    <Text style={styles.selectedVehicleCapacity}>
+                      Capacity: {selectedVehicleInfo.capacity}
+                    </Text>
+                  )}
+                </View>
+              </View>
               <TouchableOpacity
-                key={type}
-                style={[
-                  styles.optionButton,
-                  vehicleType === type && styles.optionButtonSelected
-                ]}
+                style={styles.changeVehicleButton}
                 onPress={() => {
-                  setVehicleType(type);
-                  if (type !== 'Other (please specify)') setCustomVehicleType('');
+                  setVehicleType('');
+                  setSelectedVehicleInfo(null);
                 }}
               >
-                <Text style={[
-                  styles.optionText,
-                  vehicleType === type && styles.optionTextSelected
-                ]}>
-                  {type}
-                </Text>
+                <Text style={styles.changeVehicleButtonText}>Change</Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-          {vehicleType === 'Other (please specify)' && (
-            <View style={[styles.inputContainer, { marginTop: 8 }]}>
+            </View>
+          )}
+
+          {/* Custom Vehicle Type Input - Show when "Other" is selected */}
+          {vehicleType === 'Other' && (
+            <View style={[styles.inputContainer, { marginTop: 12 }]}>
               <TextInput
                 style={styles.input}
-                placeholder="Other vehicle type (min 5 characters)"
+                placeholder="Please specify other vehicle type (min 5 characters)"
                 value={customVehicleType}
                 onChangeText={setCustomVehicleType}
                 placeholderTextColor="#94A3B8"
               />
             </View>
           )}
+
+          {/* Vehicle Type Selector Modal */}
+          <VehicleTypeSelector
+            isOpen={vehicleSelectorOpen}
+            onClose={handleCloseVehicleSelector}
+            onSelect={handleVehicleSelect}
+            category={selectedCategory}
+          />
         </View>
 
         {/* <View style={styles.section}>
@@ -919,5 +1010,88 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 6,
     marginLeft: 4,
+  },
+  categoryButtonsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 12,
+  },
+  categoryButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    width: '31%',
+    marginRight: '3.5%',
+    marginBottom: 10,
+  },
+  categoryButtonLastInRow: {
+    marginRight: 0,
+  },
+  categoryButtonOther: {
+    borderColor: '#E5E7EB',
+  },
+  categoryButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#01304e',
+    textAlign: 'center',
+  },
+  categoryButtonSelected: {
+    backgroundColor: '#01304e',
+    borderColor: '#01304e',
+  },
+  categoryButtonTextSelected: {
+    color: '#FFFFFF',
+  },
+  selectedVehicleContainer: {
+    backgroundColor: '#F0F9FF',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+    borderWidth: 2,
+    borderColor: '#01304e',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  selectedVehicleContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  selectedVehicleText: {
+    flex: 1,
+  },
+  selectedVehicleName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#01304e',
+    marginBottom: 4,
+  },
+  selectedVehicleCapacity: {
+    fontSize: 14,
+    color: '#64748B',
+  },
+  changeVehicleButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#01304e',
+  },
+  changeVehicleButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#01304e',
   },
 });
