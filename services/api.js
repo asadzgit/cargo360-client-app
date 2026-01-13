@@ -11,6 +11,11 @@ export const API_BASE_URL =
   (Constants?.expoConfig?.extra?.apiBaseUrl) ||
   'https://cargo360-api.onrender.com/';
 
+// Debug: Log API URL on startup
+if (__DEV__) {
+  console.log('🔗 API Base URL:', API_BASE_URL);
+}
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
@@ -81,7 +86,22 @@ api.interceptors.response.use(
       });
     }
 
-    const msg = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'An error occurred';
+    let msg = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'An error occurred';
+    
+    // Better error messages for network issues
+    if (!error.response) {
+      if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+        msg = `Cannot connect to backend at ${API_BASE_URL}. Check:\n1. Backend is running\n2. IP address is correct (${API_BASE_URL})\n3. Both devices on same WiFi`;
+        if (__DEV__) {
+          console.error('❌ Network Error:', {
+            code: error.code,
+            message: error.message,
+            apiUrl: API_BASE_URL
+          });
+        }
+      }
+    }
+    
     return Promise.reject(new Error(msg));
   }
 );
