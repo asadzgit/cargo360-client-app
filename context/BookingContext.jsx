@@ -133,8 +133,9 @@ export function BookingProvider({ children }) {
       ...(deliveryDate ? { deliveryDate } : {}),
       ...(insurance !== undefined ? { insurance } : {}),
       ...(salesTax !== undefined ? { salesTax } : {}),
-      ...(companyName ? { companyName } : {}),
+      platform: "mobile", // Track that booking is from mobile app - must be last to ensure it's not overwritten
     };
+    console.log("Booking payload being sent:", JSON.stringify(payload, null, 2));
     const { data } = await bookingAPI.create(payload);
     await fetchBookings(undefined, { force: true });
     return data;

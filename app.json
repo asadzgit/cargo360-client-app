@@ -2,7 +2,7 @@
   "expo": {
     "name": "cargo360",
     "slug": "cargo360",
-    "version": "1.1.2",
+    "version": "1.1.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "cargo360",
@@ -17,7 +17,8 @@
     },
     "android": {
       "package": "com.cargo360.app",
-      "versionCode": 11,
+      "googleServicesFile": "./google-services.json",
+      "versionCode": 14,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#FFFFFF"
@@ -32,7 +33,15 @@
       "expo-router",
       "expo-font",
       "expo-web-browser",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#01304e",
+          "sounds": []
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
