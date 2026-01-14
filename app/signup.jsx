@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { useRouter } from 'expo-router';
 import { Truck, Mail, Lock, User, Phone,Building2, Eye, EyeOff} from 'lucide-react-native';
 import { useBooking } from '../context/BookingContext';
+import WhatsAppButton from '../components/WhatsAppButton';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
@@ -15,7 +16,6 @@ export default function SignupScreen() {
   const router = useRouter();
   const { signup } = useBooking();
   const [showPassword, setShowPassword] = useState(false);
-
   const handleSignup = async () => {
     if (!name || !email || !password || !phone || !company) {
       Alert.alert('Error', 'Please fill in all the fields');
@@ -220,6 +220,8 @@ export default function SignupScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      <WhatsAppButton accessibilityLabel="Contact Cargo360 support on WhatsApp" />
     </View>
   );
 }

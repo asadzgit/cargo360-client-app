@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Truck, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { useBooking } from '../context/BookingContext';
 import { authAPI } from '../services/api';
+import WhatsAppButton from '../components/WhatsAppButton';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -182,6 +183,8 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      <WhatsAppButton accessibilityLabel="Contact Cargo360 support on WhatsApp" />
     </View>
   );
 }
