@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } fro
 import { useRouter } from 'expo-router';
 import { Truck, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { useBooking } from '../context/BookingContext';
-import { authAPI } from '../services/api';
+import { authAPI, API_BASE_URL } from '../services/api';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -61,7 +61,22 @@ export default function LoginScreen() {
       if (isEmailNotVerified) {
         setShowResendButton(true);
       }
-      Alert.alert('Error', errorMessage);
+      
+      // Format error message for better display in Alert
+      // Split long messages into title and message for better UX
+      let alertTitle = 'Error';
+      let alertMessage = errorMessage;
+      
+      // If it's a network error, provide a more user-friendly message
+      if (errorCode === 'ERR_NETWORK' || errorMessageLower.includes('cannot connect')) {
+        alertTitle = 'Connection Error';
+        // Extract just the key info for the alert
+        const urlMatch = errorMessage.match(/http:\/\/[^\s]+/);
+        const url = urlMatch ? urlMatch[0] : API_BASE_URL;
+        alertMessage = `Cannot connect to server at ${url}.\n\nPlease check:\n• Backend server is running\n• IP address is correct\n• Device is on the same network`;
+      }
+      
+      Alert.alert(alertTitle, alertMessage);
     } finally {
       setLoading(false);
     }

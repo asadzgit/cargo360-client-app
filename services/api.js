@@ -19,6 +19,7 @@ if (__DEV__) {
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
+  timeout: 30000, // 30 second timeout
 });
 
 export async function getAccessToken() {
@@ -86,22 +87,35 @@ api.interceptors.response.use(
       });
     }
 
-    let msg = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'An error occurred';
-    
-    // Better error messages for network issues
+    // Handle network errors (no response from server)
     if (!error.response) {
-      if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
-        msg = `Cannot connect to backend at ${API_BASE_URL}. Check:\n1. Backend is running\n2. IP address is correct (${API_BASE_URL})\n3. Both devices on same WiFi`;
-        if (__DEV__) {
-          console.error('❌ Network Error:', {
-            code: error.code,
-            message: error.message,
-            apiUrl: API_BASE_URL
-          });
-        }
+      const errorCode = error?.code || '';
+      let networkErrorMsg = 'Network Error';
+      
+      // Provide specific error messages based on error code
+      if (errorCode === 'ERR_NETWORK' || errorCode === 'ECONNREFUSED' || errorCode === 'ENOTFOUND') {
+        // Format message for mobile alerts (use spaces instead of newlines for better display)
+        networkErrorMsg = `Cannot connect to server at ${API_BASE_URL}. Please check: Backend server is running, IP address is correct (${API_BASE_URL}), device/emulator is on the same network, and firewall is not blocking. To fix: Update EXPO_PUBLIC_API_BASE_URL in package.json with your current IP address.`;
+      } else if (errorCode === 'ETIMEDOUT' || errorCode === 'ECONNABORTED') {
+        networkErrorMsg = `Request timeout. Server at ${API_BASE_URL} is not responding.`;
+      } else if (error.message?.includes('Network Error')) {
+        networkErrorMsg = `Network Error: Cannot reach ${API_BASE_URL}. Check if backend server is running and accessible.`;
       }
+      
+      if (__DEV__) {
+        console.error('❌ Network Error:', {
+          apiUrl: API_BASE_URL,
+          code: errorCode,
+          message: error?.message,
+          fullError: error
+        });
+      }
+      
+      return Promise.reject(new Error(networkErrorMsg));
     }
-    
+
+    // Handle HTTP response errors (server responded with error status)
+    const msg = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'An error occurred';
     return Promise.reject(new Error(msg));
   }
 );

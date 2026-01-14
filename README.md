@@ -169,8 +169,17 @@ The app uses the following configuration:
 ## Scripts
 
 ```bash
-# Development
-yarn dev              # Start Expo dev server
+# Development (with auto IP detection - RECOMMENDED)
+yarn dev:auto         # Automatically detects your IP and starts Expo
+
+# Development (with manual IP - update IP in package.json first)
+yarn dev              # Start Expo with hardcoded IP from package.json
+
+# Development (for iOS Simulator)
+yarn dev:localhost    # Uses localhost (works for iOS Simulator)
+
+# Development (for Android Emulator)
+yarn dev:emulator     # Uses 10.0.2.2 (Android emulator special IP)
 
 # Building
 yarn build:web        # Build for web
@@ -178,6 +187,79 @@ yarn build:web        # Build for web
 # Linting
 yarn lint             # Run Expo linter
 ```
+
+### Which dev script should I use?
+
+- **`yarn dev:auto`** (Recommended): Automatically detects your current IP address. Use this if you're testing on a physical device and your IP changes frequently.
+- **`yarn dev:localhost`**: Use this if you're testing on iOS Simulator (localhost works directly).
+- **`yarn dev:emulator`**: Use this if you're testing on Android Emulator (10.0.2.2 is the special IP that maps to host machine's localhost).
+- **`yarn dev`**: Use this if you want to manually specify an IP address (update it in package.json first).
+
+## Troubleshooting
+
+### Network Error: Cannot Connect to Server
+
+If you see a network error like:
+```
+❌ Network Error: Cannot connect to server at http://192.168.0.102:4000/
+```
+
+**This usually happens when:**
+1. The backend server is not running
+2. Your computer's IP address changed (common after network changes or pulling code)
+3. Your device/emulator is on a different network than your computer
+
+**Quick Fix (Recommended):**
+Use the auto IP detection script - it automatically finds your current IP:
+```bash
+yarn dev:auto
+```
+This script will automatically detect your WiFi IP address and use it, so you don't need to update it manually every time it changes!
+
+**Manual Fix (if auto-detection doesn't work):**
+
+1. **Find your current IP address:**
+   ```bash
+   # Windows (PowerShell)
+   ipconfig | findstr IPv4
+   
+   # Windows (CMD)
+   ipconfig
+   
+   # Mac/Linux
+   ifconfig | grep "inet "
+   # or
+   ip addr show
+   ```
+   Look for your local network IP (usually starts with `192.168.x.x` or `10.x.x.x`)
+
+2. **Update the IP in `package.json`:**
+   ```json
+   "dev": "cross-env EXPO_NO_TELEMETRY=1 EXPO_PUBLIC_API_BASE_URL=http://YOUR_IP:4000/ expo start"
+   ```
+   Replace `YOUR_IP` with your current IP address (e.g., `192.168.0.105`)
+
+3. **Make sure backend server is running:**
+   - Navigate to the backend directory
+   - Start the server (usually `npm start` or `node server.js`)
+   - Verify it's running on port 4000
+
+4. **Check network connectivity:**
+   - Ensure your phone/emulator is on the same WiFi network as your computer
+   - For Android emulator, use `10.0.2.2` instead of your local IP
+   - For iOS simulator, `localhost` or `127.0.0.1` should work
+
+5. **Restart Expo:**
+   ```bash
+   # Stop the current server (Ctrl+C)
+   # Clear cache and restart
+   npx expo start --clear
+   ```
+
+**Alternative: Use Production API**
+If you want to test against the production API instead of local:
+- Remove or comment out `EXPO_PUBLIC_API_BASE_URL` from the dev script
+- The app will use the production API: `https://cargo360-api.onrender.com/`
 
 ## Known Issues
 

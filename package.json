@@ -4,8 +4,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "cross-env EXPO_NO_TELEMETRY=1 EXPO_PUBLIC_API_BASE_URL=http://192.168.0.102:4000/ expo start",
-    "dev:auto": "powershell -ExecutionPolicy Bypass -File ./start-dev.ps1",
+    "dev": "cross-env EXPO_NO_TELEMETRY=1 EXPO_PUBLIC_API_BASE_URL=http://192.168.1.17:4000/ expo start",
+    "dev:auto": "powershell -ExecutionPolicy Bypass -File ./start-dev-auto-ip.ps1",
+    "dev:localhost": "cross-env EXPO_NO_TELEMETRY=1 EXPO_PUBLIC_API_BASE_URL=http://localhost:4000/ expo start",
+    "dev:emulator": "cross-env EXPO_NO_TELEMETRY=1 EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:4000/ expo start",
     "build:web": "expo export --platform web",
     "lint": "expo lint"
   },

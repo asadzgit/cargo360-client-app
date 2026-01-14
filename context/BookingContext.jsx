@@ -21,7 +21,12 @@ export function BookingProvider({ children }) {
         if (!mounted) return;
         setUser(data);
         await fetchBookings(undefined, { force: true });
-      } catch (_e) {
+      } catch (e) {
+        // Silently handle auth errors on startup (user not logged in)
+        // Only log network errors for debugging
+        if (__DEV__ && (!e?.response && e?.code === 'ERR_NETWORK')) {
+          console.warn('⚠️ Network error during initial auth check:', e?.message);
+        }
         await clearTokens();
         if (mounted) {
           setUser(null);
