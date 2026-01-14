@@ -19,7 +19,9 @@ export function BookingProvider({ children }) {
         setLoading(true);
         const { data } = await authAPI.me();
         if (!mounted) return;
-        setUser(data);
+        // API returns { user: { ... } } or user directly
+        const userData = data?.user || data;
+        setUser(userData);
         await fetchBookings(undefined, { force: true });
       } catch (e) {
         // Silently handle auth errors on startup (user not logged in)
@@ -54,7 +56,9 @@ export function BookingProvider({ children }) {
         setUser(data.user);
       } else {
         const me = await authAPI.me();
-        setUser(me.data);
+        // API returns { user: { ... } } or user directly
+        const userData = me.data?.user || me.data;
+        setUser(userData);
       }
       await fetchBookings(undefined, { force: true });
       return true;
@@ -118,7 +122,7 @@ export function BookingProvider({ children }) {
     return run;
   }
 
-  async function addBooking({ vehicleType, loadType, fromLocation, toLocation, description, cargoWeight, cargoSize, budget, numContainers, numberOfVehicles, pickupDate, deliveryDate, insurance, salesTax }) {
+  async function addBooking({ vehicleType, loadType, fromLocation, toLocation, description, cargoWeight, cargoSize, budget, numContainers, numberOfVehicles, pickupDate, deliveryDate, insurance, salesTax, companyName }) {
     const payload = {
       pickupLocation: fromLocation,
       dropLocation: toLocation,
@@ -134,7 +138,9 @@ export function BookingProvider({ children }) {
       ...(deliveryDate ? { deliveryDate } : {}),
       ...(insurance !== undefined ? { insurance } : {}),
       ...(salesTax !== undefined ? { salesTax } : {}),
+      platform: "mobile", // Track that booking is from mobile app - must be last to ensure it's not overwritten
     };
+    console.log("Booking payload being sent:", JSON.stringify(payload, null, 2));
     const { data } = await bookingAPI.create(payload);
     await fetchBookings(undefined, { force: true });
     return data;
