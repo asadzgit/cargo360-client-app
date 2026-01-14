@@ -159,4 +159,187 @@ export const splashScreenStyles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     zIndex: 1000,
   },
+
+  // ========== SPLASH SCREEN 3 STYLES ==========
+  
+  // Screen 3 Container - White background - covers full screen
+  screen3Container: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT + 100, // Extend beyond screen to cover any gaps
+    backgroundColor: '#FFFFFF', // Solid white background
+    overflow: 'hidden',
+  },
+
+  // Screen 3 - Rectangle 105
+  rectangle105Screen3: {
+    position: 'absolute',
+    width: 390,
+    height: 843,
+    top: 1,
+    left: (SCREEN_WIDTH - 390) / 2,
+    backgroundColor: 'rgba(244, 246, 247, 0.88)', // #F4F6F7 with 88% opacity
+    shadowColor: 'rgba(0, 0, 0, 0.1)',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 1,
+    shadowRadius: 40, // Blur 40px
+    elevation: 40,
+  },
+
+  // Screen 3 - Ellipse 9
+  ellipse9Screen3: {
+    position: 'absolute',
+    width: 358,
+    height: 358,
+    top: -201,
+    left: 171,
+    borderRadius: 358, // Fully circular
+    backgroundColor: '#0070B2', // Primary Blue Teal-400
+    shadowColor: '#0070B2',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 1,
+    shadowRadius: 50, // Blur 50px
+    elevation: 50,
+  },
+
+  // Screen 3 - Vector 4 with gradient
+  vector4Screen3: {
+    position: 'absolute',
+    width: 536,
+    height: 568.117,
+    top: 423,
+    left: -195,
+    transform: [{ rotate: '130.658deg' }], // Positive rotation
+    shadowColor: 'rgba(0, 0, 0, 0.3)',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 1,
+    shadowRadius: 50, // Blur 50px
+    elevation: 50,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+
+  // Screen 3 - Mask Group Ellipse12 (larger size)
+  ellipse12Screen3: {
+    position: 'absolute',
+    width: 1045,
+    height: 1045,
+    top: -65,
+    left: -318,
+    borderRadius: 1045, // Fully circular
+    backgroundColor: 'rgba(217, 217, 217, 0.5)', // #D9D9D9 - reduced opacity to prevent brownish tint
+  },
+
+  // Screen 3 - Mask Group Group7176
+  group7176Screen3: {
+    position: 'absolute',
+    width: 469,
+    height: 894,
+    top: -114,
+    left: -26,
+    backgroundColor: 'transparent',
+  },
+
+  // Screen 3 - Image container wrapper with white background
+  imageContainerWrapper: {
+    position: 'absolute',
+    width: 469,
+    height: 698,
+    top: -114,
+    left: -26,
+    backgroundColor: '#FFFFFF', // White background
+    overflow: 'hidden',
+    zIndex: 2,
+  },
+
+  // Screen 3 - Splash truck image
+  splashTruckImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+
+  // Screen 3 - White square for bottom-left corner
+  bottomLeftCorner: {
+    position: 'absolute',
+    bottom:-20,
+    left: 20,
+    width: 95, // Size of the corner square
+    height: 40,
+    backgroundColor: '#FFFFFF',
+    borderTopRightRadius: 15, // Rounded corner on the top-right of the square
+    zIndex: 3,
+  },
+
+  // Screen 3 - White square for bottom-right corner
+  bottomRightCorner: {
+    position: 'absolute',
+    bottom: -20, // Match left corner positioning
+    right: 40, // Match left corner offset
+    width: 95, // Match left corner width
+    height: 40, // Match left corner height
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 15, // Rounded corner on the top-left of the square (match left corner radius)
+    zIndex: 3,
+  },
+
+  // Screen 3 - Buttons container
+  // Note: Container extends 100px below screen, so add 100 to get proper spacing from visible bottom
+  buttonsContainer: {
+    position: 'absolute',
+    bottom: 130, // 100px (container extension) + 60px (desired spacing) = 160px from container bottom
+    left: (SCREEN_WIDTH - 320) / 2,
+    width: 320,
+    flexDirection: 'column',
+    alignItems: 'stretch', // Ensure buttons don't stretch
+    zIndex: 15,
+  },
+
+  // Create Account Button (Primary)
+  createAccountButton: {
+    width: 320,
+    height: 48,
+    backgroundColor: 'rgba(1, 48, 78, 1)',
+    borderRadius: 25,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 11,
+    flexShrink: 0, // Prevent stretching
+  },
+
+  createAccountButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
+  // Login Button (Secondary)
+  loginButton: {
+    width: 320,
+    height: 48,
+    backgroundColor: 'rgba(201, 210, 216, 1)',
+    borderRadius: 25,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0, // Prevent stretching
+  },
+
+  loginButtonText: {
+    color: '#01304e',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
