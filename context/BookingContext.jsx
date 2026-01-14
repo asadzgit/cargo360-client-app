@@ -19,7 +19,9 @@ export function BookingProvider({ children }) {
         setLoading(true);
         const { data } = await authAPI.me();
         if (!mounted) return;
-        setUser(data);
+        // API returns { user: { ... } } or user directly
+        const userData = data?.user || data;
+        setUser(userData);
         await fetchBookings(undefined, { force: true });
       } catch (_e) {
         await clearTokens();
@@ -49,7 +51,9 @@ export function BookingProvider({ children }) {
         setUser(data.user);
       } else {
         const me = await authAPI.me();
-        setUser(me.data);
+        // API returns { user: { ... } } or user directly
+        const userData = me.data?.user || me.data;
+        setUser(userData);
       }
       await fetchBookings(undefined, { force: true });
       return true;
@@ -113,7 +117,7 @@ export function BookingProvider({ children }) {
     return run;
   }
 
-  async function addBooking({ vehicleType, loadType, fromLocation, toLocation, description, cargoWeight, cargoSize, budget, numContainers, numberOfVehicles, pickupDate, deliveryDate, insurance, salesTax }) {
+  async function addBooking({ vehicleType, loadType, fromLocation, toLocation, description, cargoWeight, cargoSize, budget, numContainers, numberOfVehicles, pickupDate, deliveryDate, insurance, salesTax, companyName }) {
     const payload = {
       pickupLocation: fromLocation,
       dropLocation: toLocation,
