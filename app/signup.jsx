@@ -1,8 +1,14 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, ScrollView, Dimensions, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Truck, Mail, Lock, User, Phone,Building2, Eye, EyeOff} from 'lucide-react-native';
+import { User, Phone, Building2, Eye, EyeOff } from 'lucide-react-native';
 import { useBooking } from '../context/BookingContext';
+import { loginScreenStyles } from '../styles/loginScreenStyles';
+import { MailIcon } from '../components/MailIcon';
+import { KeyIcon } from '../components/KeyIcon';
+import { EyeCloseIcon } from '../components/EyeCloseIcon';
+import { EyeOpenIcon } from '../components/EyeOpenIcon';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
@@ -12,9 +18,25 @@ export default function SignupScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [companyError, setCompanyError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  
   const router = useRouter();
   const { signup } = useBooking();
-  const [showPassword, setShowPassword] = useState(false);
+
+  const handleOpenPrivacyPolicy = async () => {
+    const url = 'https://app.cargo360pk.com/privacy-policy';
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'Unable to open the link.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Unable to open the link.');
+    }
+  };
 
   const handleSignup = async () => {
     if (!name || !email || !password || !phone || !company) {
@@ -40,7 +62,6 @@ export default function SignupScreen() {
     setLoading(true);
     
     try {
-      // Normalize email to lowercase for case-insensitive handling
       const normalizedEmail = email.toLowerCase().trim();
       const payload = { name, email: normalizedEmail, company, password };
       if (phone) payload.phone = phone;
@@ -48,14 +69,9 @@ export default function SignupScreen() {
       
       if (response?.error) {
         Alert.alert('Error', response.error);
-      } else if (response?.message) {
-        // Show success message and navigate to login
-        Alert.alert('Success', response.message, [
-          { text: 'OK', onPress: () => router.replace('/login') }
-        ]);
       } else {
-        // Fallback: navigate to login
-        router.replace('/login');
+        // Show confirmation modal on success
+        setShowConfirmationModal(true);
       }
     } catch (error) {
       Alert.alert('Error', error?.message || 'Signup failed. Please try again.');
@@ -65,262 +81,487 @@ export default function SignupScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Truck size={48} color="#01304e" />
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Join Cargo360 and start booking</Text>
-      </View>
+    <View style={loginScreenStyles.container}>
+      {/* Content Wrapper - controls vertical position (top/center/bottom) */}
+      <View style={[loginScreenStyles.contentWrapper, styles.contentWrapperOverride]}>
+        {/* Main Container - 358px width, centered, with 32px gap between children */}
+        <ScrollView 
+          style={{ width: loginScreenStyles.main.width }}
+          contentContainerStyle={{
+            display: 'flex',
+            padding: 0,
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 32,
+            paddingBottom: 20,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Top Heading */}
+          <View style={styles.topHeading}>
+            {/* Logo Container */}
+            <View style={styles.logoContainer}>
+              <Image
+                source={require('../assets/images/icon.png')}
+                style={styles.cargo360Logo}
+                resizeMode="contain"
+              />
+            </View>
 
-      <View style={styles.form}>
-        <View style={styles.inputContainer}>
-          <User size={20} color="#999999" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Full name"
-            value={name}
-            onChangeText={setName}
-            placeholderTextColor="#94A3B8"
-          />
-        </View>
+            {/* SignUp Text Container */}
+            <View style={styles.signUpContainer}>
+              <Text style={styles.welcomeBackText}>Let's get started</Text>
+              <Text style={styles.signInSubtitle}>
+                Enter a valid email we'll send a confirmation code.
+              </Text>
+            </View>
+          </View>
 
-        <View style={styles.inputContainer}>
-          <Mail size={20} color="#999999" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Email address"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholderTextColor="#94A3B8"
-          />
-        </View>
+          {/* Input Section */}
+          <View style={styles.inputSection}>
+            {/* 1st Input Field - Name */}
+            <View style={styles.inputFieldContainer}>
+              <View style={styles.input}>
+                <User size={24} color="#4E5C6C" />
+                <TextInput
+                  style={styles.inputText}
+                  placeholder="Full name"
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                  placeholderTextColor="#A3B1BD"
+                />
+              </View>
+            </View>
 
-        {/* 🟢 New Company Name Field (added below email) */}
-        <View>
-          <View style={[styles.inputContainer, companyError && styles.inputContainerError]}>
-            <Building2 size={20} color="#999999" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Enter company name"
-              value={company}
-              onChangeText={(text) => {
-                // Check if invalid characters are being typed (only allow letters, digits, spaces)
-                const hasInvalidChars = /[^a-zA-Z0-9\s]/.test(text);
-                
-                // Only allow letters, digits, and spaces
-                const sanitized = text.replace(/[^a-zA-Z0-9\s]/g, '');
-                setCompany(sanitized);
-                
-                // Show error immediately if invalid characters detected
-                if (hasInvalidChars) {
-                  setCompanyError('Company name can only contain letters, numbers, and spaces');
-                } else {
-                  // Validate immediately
-                  if (sanitized.length === 0) {
-                    setCompanyError('Company name is required');
-                  } else if (sanitized.length < 3) {
-                    setCompanyError('Company name must be at least 3 characters');
-                  } else {
-                    // Count letters
-                    const letterCount = (sanitized.match(/[a-zA-Z]/g) || []).length;
-                    if (letterCount < 3) {
-                      setCompanyError('Company name must contain at least 3 letters');
+            {/* 2nd Input Field - Company */}
+            <View style={styles.inputFieldContainer}>
+              <View style={[styles.input, companyError && styles.inputError]}>
+                <Building2 size={24} color="#4E5C6C" />
+                <TextInput
+                  style={styles.inputText}
+                  placeholder="Enter company name"
+                  value={company}
+                  onChangeText={(text) => {
+                    const hasInvalidChars = /[^a-zA-Z0-9\s]/.test(text);
+                    const sanitized = text.replace(/[^a-zA-Z0-9\s]/g, '');
+                    setCompany(sanitized);
+                    
+                    if (hasInvalidChars) {
+                      setCompanyError('Company name can only contain letters, numbers, and spaces');
                     } else {
-                      // Check if it's only digits
-                      const isOnlyDigits = /^\d+$/.test(sanitized.replace(/\s/g, ''));
-                      if (isOnlyDigits) {
-                        setCompanyError('Company name cannot contain only digits');
+                      if (sanitized.length === 0) {
+                        setCompanyError('Company name is required');
+                      } else if (sanitized.length < 3) {
+                        setCompanyError('Company name must be at least 3 characters');
                       } else {
-                        setCompanyError('');
+                        const letterCount = (sanitized.match(/[a-zA-Z]/g) || []).length;
+                        if (letterCount < 3) {
+                          setCompanyError('Company name must contain at least 3 letters');
+                        } else {
+                          const isOnlyDigits = /^\d+$/.test(sanitized.replace(/\s/g, ''));
+                          if (isOnlyDigits) {
+                            setCompanyError('Company name cannot contain only digits');
+                          } else {
+                            setCompanyError('');
+                          }
+                        }
                       }
                     }
-                  }
-                }
-              }}
-              onBlur={() => {
-                // Validate on blur
-                if (company.length === 0) {
-                  setCompanyError('Company name is required');
-                } else if (company.length < 3) {
-                  setCompanyError('Company name must be at least 3 characters');
-                } else if (!/^[a-zA-Z0-9\s]+$/.test(company)) {
-                  setCompanyError('Company name can only contain letters, numbers, and spaces');
-                } else {
-                  // Count letters
-                  const letterCount = (company.match(/[a-zA-Z]/g) || []).length;
-                  if (letterCount < 3) {
-                    setCompanyError('Company name must contain at least 3 letters');
-                  } else {
-                    // Check if it's only digits
-                    const isOnlyDigits = /^\d+$/.test(company.replace(/\s/g, ''));
-                    if (isOnlyDigits) {
-                      setCompanyError('Company name cannot contain only digits');
+                  }}
+                  onBlur={() => {
+                    if (company.length === 0) {
+                      setCompanyError('Company name is required');
+                    } else if (company.length < 3) {
+                      setCompanyError('Company name must be at least 3 characters');
+                    } else if (!/^[a-zA-Z0-9\s]+$/.test(company)) {
+                      setCompanyError('Company name can only contain letters, numbers, and spaces');
                     } else {
-                      setCompanyError('');
+                      const letterCount = (company.match(/[a-zA-Z]/g) || []).length;
+                      if (letterCount < 3) {
+                        setCompanyError('Company name must contain at least 3 letters');
+                      } else {
+                        const isOnlyDigits = /^\d+$/.test(company.replace(/\s/g, ''));
+                        if (isOnlyDigits) {
+                          setCompanyError('Company name cannot contain only digits');
+                        } else {
+                          setCompanyError('');
+                        }
+                      }
                     }
-                  }
-                }
-              }}
-              placeholderTextColor="#94A3B8"
-            />
+                  }}
+                  placeholderTextColor="#A3B1BD"
+                />
+              </View>
+              {companyError ? <Text style={styles.errorText}>{companyError}</Text> : null}
+            </View>
+
+            {/* 3rd Input Field - Phone */}
+            <View style={styles.inputFieldContainer}>
+              <View style={styles.input}>
+                <Phone size={24} color="#4E5C6C" />
+                <TextInput
+                  style={styles.inputText}
+                  placeholder="Phone number"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  placeholderTextColor="#A3B1BD"
+                />
+              </View>
+            </View>
+
+            {/* 4th Input Field - Email */}
+            <View style={styles.inputFieldContainer}>
+              <View style={styles.input}>
+                <MailIcon size={24} color="#4E5C6C" />
+                <TextInput
+                  style={styles.inputText}
+                  placeholder="Enter your email"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  placeholderTextColor="#A3B1BD"
+                />
+              </View>
+            </View>
+
+            {/* 5th Input Field - Password */}
+            <View style={styles.passwordInputContainer}>
+              <View style={styles.input}>
+                <KeyIcon size={24} color="#4E5C6C" />
+                <TextInput
+                  style={styles.inputText}
+                  placeholder="Password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  placeholderTextColor="#A3B1BD"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword((v) => !v)}
+                  accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOpenIcon size={24} color="#4E5C6C" />
+                  ) : (
+                    <EyeCloseIcon size={24} color="#4E5C6C" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-          {companyError ? <Text style={styles.errorText}>{companyError}</Text> : null}
-        </View>
 
-        <View style={styles.inputContainer}>
-          <Phone size={20} color="#999999" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Phone number"
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            placeholderTextColor="#94A3B8"
-          />
-        </View>
+          {/* Button */}
+          <TouchableOpacity
+            style={[
+              styles.button,
+              (name && email && company && phone && password && !loading && !companyError) && styles.buttonEnabled,
+              loading && { opacity: 0.5 }
+            ]}
+            onPress={handleSignup}
+            disabled={loading || !name || !email || !company || !phone || !password || !!companyError}
+          >
+            <Text style={styles.buttonText}>
+              {loading ? 'Creating Account...' : "Let's get started"}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+      {/* End of Content Wrapper */}
 
-        <View style={styles.inputContainer}>
-  <Lock size={20} color="#999999" style={styles.inputIcon} />
-
-  <TextInput
-    style={styles.input}
-    placeholder="Password (min 6 characters)"
-    value={password}
-    onChangeText={setPassword}
-    secureTextEntry={!showPassword}      // ✅ Toggle password visibility
-    placeholderTextColor="#94A3B8"
-  />
-
-  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-    {showPassword ? (
-      <EyeOff size={20} color="#999999" />
-    ) : (
-      <Eye size={20} color="#999999" />
-    )}
-  </TouchableOpacity>
-</View>
-
-
-        <TouchableOpacity 
-          style={[styles.button, loading && styles.buttonDisabled]} 
-          onPress={handleSignup}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? 'Creating Account...' : 'Create Account'}
-          </Text>
-        </TouchableOpacity>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account? </Text>
+      {/* Footer - positioned at bottom of screen */}
+      <View style={styles.footer}>
+        {/* SignIn Section */}
+        <View style={styles.signInSection}>
+          <Text style={styles.alreadyHaveAccountText}>Already have an account?</Text>
           <TouchableOpacity onPress={() => router.push('/login')}>
-            <Text style={styles.link}>Sign In</Text>
+            <Text style={styles.signInLink}>Sign in</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Terms & Conditions Section */}
+        <View style={styles.tcSection}>
+          <Text style={styles.tcText}>
+            By continuing, you agree to our{' '}
+            <Text style={styles.tcLink} onPress={handleOpenPrivacyPolicy}>
+              T&C
+            </Text>
+            {' '}and{' '}
+            <Text style={styles.tcLink} onPress={handleOpenPrivacyPolicy}>
+              Privacy Policy
+            </Text>
+            .
+          </Text>
+        </View>
       </View>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        visible={showConfirmationModal}
+        onClose={() => setShowConfirmationModal(false)}
+        onOpenMail={() => {
+          // TODO: Implement open mail functionality
+          setShowConfirmationModal(false);
+        }}
+        onSignUpWithPhone={() => {
+          // TODO: Implement sign up with phone number
+          setShowConfirmationModal(false);
+        }}
+        onLogin={() => {
+          setShowConfirmationModal(false);
+          router.push('/login');
+        }}
+      />
     </View>
   );
 }
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    padding: 24,
+  // Content Wrapper Override - move content down
+  contentWrapperOverride: {
+    justifyContent: 'flex-start',
+    paddingTop: 60,
+    paddingBottom: 0,
+  },
+
+  // Top Heading
+  topHeading: {
+    display: 'flex',
+    padding: 0,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 4,
+    alignSelf: 'stretch',
+  },
+
+  // Logo Container
+  logoContainer: {
+    display: 'flex',
     justifyContent: 'center',
-  },
-  header: {
     alignItems: 'center',
-    marginBottom: 48,
+    gap: 8,
+    alignSelf: 'stretch',
+    position: 'relative',
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#01304e',
-    marginTop: 16,
-    marginBottom: 8,
+
+  // Cargo360 Image Logo
+  cargo360Logo: {
+    width: 128,
+    height: 128,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#777777',
+
+  // SignUp Text Container
+  signUpContainer: {
+    display: 'flex',
+    padding: 0,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'stretch',
+  },
+
+  // Welcome back text
+  welcomeBackText: {
+    alignSelf: 'stretch',
+    color: '#0F1317',
     textAlign: 'center',
+    fontSize: 32,
+    fontStyle: 'normal',
+    fontWeight: '500',
+    lineHeight: 38.4,
   },
-  form: {
-    width: '100%',
+
+  // Sign in subtitle text
+  signInSubtitle: {
+    color: '#4E5C6C',
+    textAlign: 'center',
+    fontSize: 12,
+    fontStyle: 'normal',
+    fontWeight: '400',
+    lineHeight: 16.32,
+    letterSpacing: -0.12,
   },
-  inputContainer: {
-    flexDirection: 'row',
+
+  // Input Section
+  inputSection: {
+    display: 'flex',
+    padding: 0,
+    flexDirection: 'column',
     alignItems: 'center',
+    gap: 12,
+    alignSelf: 'stretch',
+  },
+
+  // Input Field Container
+  inputFieldContainer: {
+    display: 'flex',
+    padding: 0,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 4,
+    alignSelf: 'stretch',
+  },
+
+  // Password Input Container
+  passwordInputContainer: {
+    display: 'flex',
+    padding: 0,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 4,
+    alignSelf: 'stretch',
+  },
+
+  // Input (email and password)
+  input: {
+    display: 'flex',
+    height: 48,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'stretch',
+    borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    marginBottom: 4,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    flexDirection: 'row',
   },
-  inputContainerError: {
+
+  // Input Error State
+  inputError: {
+    borderWidth: 1,
     borderColor: '#DC2626',
-    marginBottom: 4,
   },
+
+  // Input Text
+  inputText: {
+    flex: 1,
+    color: '#0F1317',
+    fontSize: 14,
+    fontStyle: 'normal',
+    fontWeight: '400',
+    lineHeight: 18.48,
+    padding: 0,
+  },
+
+  // Error Text
   errorText: {
     color: '#DC2626',
     fontSize: 12,
-    marginTop: 0,
-    marginBottom: 12,
-    paddingLeft: 4,
+    fontWeight: '400',
+    lineHeight: 16.32,
+    marginTop: 4,
   },
-  inputIcon: {
-    marginRight: 12,
-    color: '#999999',
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333333',
-    paddingVertical: 12,
-  },
+
+  // Button
   button: {
-    backgroundColor: '#01304e',
-    borderRadius: 12,
+    display: 'flex',
+    minHeight: 48,
     paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  buttonDisabled: {
-    backgroundColor: '#94A3B8',
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  footer: {
-    flexDirection: 'row',
+    paddingHorizontal: 16,
     justifyContent: 'center',
-    marginTop: 24,
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'stretch',
+    borderRadius: 24,
+    opacity: 0.5,
+    backgroundColor: '#01304E',
   },
-  footerText: {
-    color: '#777777',
-    fontSize: 14,
+
+  // Button when enabled (remove opacity)
+  buttonEnabled: {
+    opacity: 1,
   },
-  link: {
-    color: '#01304e',
-    fontSize: 14,
-    fontWeight: '600',
+
+  // Button Text
+  buttonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontStyle: 'normal',
+    fontWeight: '500',
+    lineHeight: 21.12,
+    letterSpacing: -0.16,
+  },
+
+  // Footer - positioned at bottom of screen
+  footer: {
+    display: 'flex',
+    maxWidth: 390,
+    width: Math.min(390, SCREEN_WIDTH - 32), // Responsive: 390px max, or screen width minus 32px margin
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 16, // Spacing-5
+    paddingBottom: 40,
+    alignSelf: 'center',
+  },
+
+  // SignIn Section
+  signInSection: {
+    display: 'flex',
+    paddingVertical: 0,
+    paddingHorizontal: 20, // Spacing-6
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8, // Spacing-3
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+  },
+
+  // Already have an account text
+  alreadyHaveAccountText: {
+    color: '#4E5C6C', // Text-secondary
+    textAlign: 'center',
+    fontSize: 12, // Text xsm/Regular
+    fontStyle: 'normal',
+    fontWeight: '400',
+    lineHeight: 16.32, // 136% of 12px
+    letterSpacing: -0.12,
+  },
+
+  // Sign in link
+  signInLink: {
+    color: '#01304E', // Button-background-primary
+    fontSize: 14, // Text sm/Medium
+    fontStyle: 'normal',
+    fontWeight: '500',
+    lineHeight: 18.48, // 132% of 14px
+  },
+
+  // Terms & Conditions Section
+  tcSection: {
+    display: 'flex',
+    paddingVertical: 0,
+    paddingHorizontal: 20, // Spacing-6
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8, // Spacing-3
+    alignSelf: 'stretch',
+  },
+
+  // Terms & Conditions text
+  tcText: {
+    color: '#4E5C6C', // Text-secondary
+    textAlign: 'center',
+    fontSize: 10, // Text xsm/Regular
+    fontStyle: 'normal',
+    fontWeight: '400',
+    lineHeight: 13.6, // 136% of 10px
+    letterSpacing: -0.1,
+    alignSelf: 'stretch',
+  },
+
+  // T&C and Privacy Policy link within the text
+  tcLink: {
+    color: '#01304E', // Button-background-primary (same as Sign in link)
+    fontSize: 10, // Text xsm/Regular
+    fontStyle: 'normal',
+    fontWeight: '500', // Medium weight (same as Sign in link)
+    lineHeight: 13.6, // 136%
+    letterSpacing: -0.1,
   },
 });
