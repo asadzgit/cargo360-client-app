@@ -12,6 +12,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, FileText, CheckCircle2, Plus, RefreshCcw } from 'lucide-react-native';
 import { clearanceAPI } from '../services/api';
 import ClearanceModal from './ClearanceModal';
+import WhatsAppButton from '../components/WhatsAppButton';
 
 export default function ClearanceDetailScreen() {
   const router = useRouter();
@@ -21,6 +22,14 @@ export default function ClearanceDetailScreen() {
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/clearance');
+    }
+  };
 
   const loadRequest = useCallback(async () => {
     try {
@@ -95,7 +104,7 @@ export default function ClearanceDetailScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <ArrowLeft size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Clearance Request</Text>
@@ -111,7 +120,7 @@ export default function ClearanceDetailScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <ArrowLeft size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Clearance Request</Text>
@@ -142,7 +151,7 @@ export default function ClearanceDetailScreen() {
       }
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <ArrowLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <FileText size={32} color="#FFFFFF" style={{alignSelf: 'center'}} />
@@ -234,6 +243,7 @@ export default function ClearanceDetailScreen() {
         loadRequest();
       }} 
     />
+    <WhatsAppButton accessibilityLabel="Contact Cargo360 support on WhatsApp" />
     </View>
   );
 }

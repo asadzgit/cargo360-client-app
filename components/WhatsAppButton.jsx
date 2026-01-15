@@ -1,11 +1,19 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { TouchableOpacity, StyleSheet, Linking, StyleProp, ViewStyle } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import { WHATSAPP_CONFIG } from '../config/whatsapp';
 
-const DEFAULT_NUMBER = '923337766609';
-
-export default function WhatsAppButton({
-  phoneNumber = DEFAULT_NUMBER,
+/**
+ * WhatsAppButton Component
+ * Floating action button that opens WhatsApp chat
+ * 
+ * @param {string} phoneNumber - WhatsApp phone number (defaults to config)
+ * @param {StyleProp<ViewStyle>} style - Additional styles
+ * @param {number} iconSize - Icon size (default: 28)
+ * @param {string} accessibilityLabel - Accessibility label
+ */
+export function WhatsAppButton({
+  phoneNumber = WHATSAPP_CONFIG.phoneNumber,
   style,
   iconSize = 28,
   accessibilityLabel = 'Contact Cargo360 on WhatsApp',
@@ -27,7 +35,7 @@ export default function WhatsAppButton({
 const styles = StyleSheet.create({
   whatsappButton: {
     position: 'absolute',
-    bottom: 32,
+    bottom: 24,
     right: 24,
     backgroundColor: '#25D366',
     width: 58,
@@ -42,4 +50,6 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
 });
+
+export default WhatsAppButton;
 
