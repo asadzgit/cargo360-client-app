@@ -22,7 +22,7 @@ import Constants from 'expo-constants';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { humanize, formatCurrency, numberToWords } from '../utils';
-import WhatsAppButton from '../components/WhatsAppButton';
+import InvoiceModal from '../components/InvoiceModal';
 
 const vehicleTypes = [
   'Small Truck (1-2 Tons)',
@@ -45,7 +45,7 @@ export default function BookingDetailScreen() {
 
 
   // added fetchBookings to keep list in context fresh if available
-  const { bookings, getBookingById, updateBooking, cancelBooking, fetchBookings } = useBooking();
+  const { bookings, getBookingById, updateBooking, cancelBooking, fetchBookings, user } = useBooking();
   const bookingFromContext = bookings.find(b => (b.id || b._id)?.toString() === bookingId);
 
 
@@ -56,6 +56,7 @@ export default function BookingDetailScreen() {
   const [selectedCancelReason, setSelectedCancelReason] = useState('');
   const [customCancelReason, setCustomCancelReason] = useState('');
   const [editVisible, setEditVisible] = useState(false);
+  const [invoiceModalVisible, setInvoiceModalVisible] = useState(false);
   
   // Cancel reason modal animation values
   const cancelModalOpacity = useRef(new Animated.Value(0)).current;
@@ -1159,6 +1160,17 @@ const handleDropLocationChange = (text) => {
             </Text>
           </TouchableOpacity>
         )}
+
+        {/* Print Invoice Button - Available when confirmed and budget exists */}
+        {(booking.status || '').toLowerCase() === 'confirmed' && booking.budget && (
+          <TouchableOpacity
+            style={styles.printInvoiceButton}
+            onPress={() => setInvoiceModalVisible(true)}
+          >
+            <Receipt size={16} color="#FFFFFF" />
+            <Text style={styles.printInvoiceButtonText}>Print Invoice</Text>
+          </TouchableOpacity>
+        )}
         
         {/* Refresh button */}
         <TouchableOpacity
@@ -2136,6 +2148,14 @@ const handleDropLocationChange = (text) => {
           </Pressable>
         </Animated.View>
       </Modal>
+
+      {/* Invoice Modal */}
+      <InvoiceModal
+        isOpen={invoiceModalVisible}
+        onClose={() => setInvoiceModalVisible(false)}
+        booking={booking}
+        user={user}
+      />
     </ScrollView>
     <WhatsAppButton accessibilityLabel="Contact Cargo360 support on WhatsApp" />
     </View>
@@ -2761,6 +2781,25 @@ const styles = StyleSheet.create({
     marginTop: 1,
     marginBottom: 17,
     gap: 12,
+  },
+  printInvoiceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#059669',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  printInvoiceButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 15,
   },
   refreshButton: {
     flexDirection: 'row',
