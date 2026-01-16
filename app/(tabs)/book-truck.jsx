@@ -14,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Truck, Package, MapPin, ArrowRight, Box, Contact } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 import VehicleTypeSelector from '../../components/VehicleTypeSelector';
+import WhatsAppButton from '../../components/WhatsAppButton';
 
 /**
  * Google Places Autocomplete Configuration
@@ -412,11 +413,12 @@ export default function BookTruckScreen() {
   };
 
   return (
-    <ScrollView
-      ref={scrollViewRef}
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.container}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+      >
       <View style={{
         alignItems: 'center',
         justifyContent: 'center',
@@ -839,6 +841,8 @@ export default function BookTruckScreen() {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    <WhatsAppButton accessibilityLabel="Contact Cargo360 support on WhatsApp" />
+    </View>
   );
 }
 

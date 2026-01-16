@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { useRouter } from 'expo-router';
 import { KeyRound, Hash, ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
 import { authAPI } from '../services/api';
+import WhatsAppButton from '../components/WhatsAppButton';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
@@ -12,6 +13,14 @@ export default function ResetPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/login');
+    }
+  };
 
   const validatePassword = (p) => p && p.length >= 6; // adjust as needed
 
@@ -44,7 +53,7 @@ export default function ResetPasswordScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <ArrowLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.title}>Reset Password</Text>
@@ -104,6 +113,7 @@ export default function ResetPasswordScreen() {
           <Text style={styles.primaryButtonText}>{loading ? 'Resetting...' : 'Reset Password'}</Text>
         </TouchableOpacity>
       </View>
+      <WhatsAppButton accessibilityLabel="Contact Cargo360 support on WhatsApp" />
     </View>
   );
 }
