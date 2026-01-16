@@ -12,6 +12,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { FileText, ArrowRight, Plus, RefreshCcw } from 'lucide-react-native';
 import { clearanceAPI } from '../../services/api';
 import ClearanceModal from '../ClearanceModal';
+import WhatsAppButton from '../../components/WhatsAppButton';
 
 export default function ClearanceListScreen() {
   const router = useRouter();
@@ -226,6 +227,7 @@ export default function ClearanceListScreen() {
           fetchRequests(); // Refresh requests after modal closes
         }} 
       />
+      <WhatsAppButton accessibilityLabel="Contact Cargo360 support on WhatsApp" />
     </View>
   );
 }

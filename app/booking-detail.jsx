@@ -22,6 +22,7 @@ import Constants from 'expo-constants';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { humanize, formatCurrency, numberToWords } from '../utils';
+import WhatsAppButton from '../components/WhatsAppButton';
 
 const vehicleTypes = [
   'Small Truck (1-2 Tons)',
@@ -33,6 +34,14 @@ const vehicleTypes = [
 export default function BookingDetailScreen() {
   const router = useRouter();
   const { bookingId } = useLocalSearchParams();
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/bookings');
+    }
+  };
 
 
   // added fetchBookings to keep list in context fresh if available
@@ -375,7 +384,7 @@ export default function BookingDetailScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <ArrowLeft size={24} color="#1E293B" />
           </TouchableOpacity>
           <Text style={styles.title}>Booking Not Found</Text>
@@ -1112,22 +1121,23 @@ const handleDropLocationChange = (text) => {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      stickyHeaderIndices={[0]}
-      contentContainerStyle={{ paddingBottom: 24 }}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          colors={['#01304e']}
-          tintColor="#01304e"
-        />
-      }
-    >
+    <View style={styles.container}>
+      <ScrollView
+        style={{ flex: 1 }}
+        stickyHeaderIndices={[0]}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={['#01304e']}
+            tintColor="#01304e"
+          />
+        }
+      >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <ArrowLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <ClipboardList size={32} color="#FFFFFF" style={{alignSelf: 'center'}} />
@@ -2127,6 +2137,8 @@ const handleDropLocationChange = (text) => {
         </Animated.View>
       </Modal>
     </ScrollView>
+    <WhatsAppButton accessibilityLabel="Contact Cargo360 support on WhatsApp" />
+    </View>
   );
 }
 

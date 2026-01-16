@@ -22,6 +22,7 @@ import { useBooking } from '../../context/BookingContext';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { humanize } from '../../utils';
+import WhatsAppButton from '../../components/WhatsAppButton';
 
 export default function BookingStatusScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -192,6 +193,7 @@ export default function BookingStatusScreen() {
           </View>
         )}
       </ScrollView>
+      <WhatsAppButton accessibilityLabel="Contact Cargo360 support on WhatsApp" />
     </View>
   );
 }

@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { User, Mail, Phone, MapPin, LogOut, Contact, Settings, CircleHelp as HelpCircle, Pencil, Lock, X } from 'lucide-react-native';
 import { useBooking } from '../../context/BookingContext';
 import { authAPI, userAPI } from '../../services/api';
+import WhatsAppButton from '../../components/WhatsAppButton';
 
 // Dev-only mock profile for UI verification
 const USE_PROFILE_MOCK = __DEV__; // true in dev/Expo, false in production
@@ -486,6 +487,7 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
+      <WhatsAppButton accessibilityLabel="Contact Cargo360 support on WhatsApp" />
     </View>
   );
 }
